@@ -5,6 +5,7 @@
 //  Created by Todd Bruss on 9/5/22.
 //
 
+#if !os(watchOS)
 import Foundation
 import SwifterLite
 
@@ -47,3 +48,4 @@ func loginRoute() -> httpReq {{ request in
         return HttpResponse.ok(.json(obj))
     }
 }}
+#endif

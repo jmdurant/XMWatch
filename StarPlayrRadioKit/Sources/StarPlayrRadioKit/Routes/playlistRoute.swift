@@ -5,6 +5,7 @@
 //  Created by Todd Bruss on 9/5/22.
 //
 
+#if !os(watchOS)
 import Foundation
 import SwifterLite
 
@@ -90,3 +91,4 @@ func playlistRoute() -> httpReq {{ request in
         }
     }
 }}
+#endif

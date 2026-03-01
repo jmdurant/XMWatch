@@ -7,57 +7,57 @@
 import Foundation
 
 // MARK: - DiscoverChannelList
-struct DiscoverChannelList: Codable {
-    var moduleListResponse: ModuleListResponse?
-    
+public struct DiscoverChannelList: Codable {
+    public var moduleListResponse: ModuleListResponse?
+
     enum CodingKeys: String, CodingKey {
         case moduleListResponse = "ModuleListResponse"
     }
 }
 
 // MARK: - ModuleListResponse
-struct ModuleListResponse: Codable {
-    var messages: [Message]?
-    var status: Int?
-    var moduleList: ModuleList?
+public struct ModuleListResponse: Codable {
+    public var messages: [Message]?
+    public var status: Int?
+    public var moduleList: ModuleList?
 }
 
 // MARK: - Message
-struct Message: Codable {
-    var code: Int?
-    var message: String?
+public struct Message: Codable {
+    public var code: Int?
+    public var message: String?
 }
 
 // MARK: - ModuleList
-struct ModuleList: Codable {
-    var modules: [Module]?
+public struct ModuleList: Codable {
+    public var modules: [Module]?
 }
 
 // MARK: - Module
-struct Module: Codable {
-    var moduleResponse: ModuleResponse?
+public struct Module: Codable {
+    public var moduleResponse: ModuleResponse?
 }
 
 // MARK: - ModuleResponse
-struct ModuleResponse: Codable {
-    var moduleDetails: ModuleDetails?
+public struct ModuleResponse: Codable {
+    public var moduleDetails: ModuleDetails?
 }
 
 // MARK: - ModuleDetails
-struct ModuleDetails: Codable {
-    var liveChannelResponse: ModuleDetailsLiveChannelResponse?
+public struct ModuleDetails: Codable {
+    public var liveChannelResponse: ModuleDetailsLiveChannelResponse?
 }
 
 // MARK: - ModuleDetailsLiveChannelResponse
-struct ModuleDetailsLiveChannelResponse: Codable {
-    var liveChannelResponses: [LiveChannelResponseElement]?
+public struct ModuleDetailsLiveChannelResponse: Codable {
+    public var liveChannelResponses: [LiveChannelResponseElement]?
 }
 
 // MARK: - LiveChannelResponseElement
-struct LiveChannelResponseElement: Codable {
-    var channelID: String?
-    var markerLists: [MarkerList]?
-    
+public struct LiveChannelResponseElement: Codable {
+    public var channelID: String?
+    public var markerLists: [MarkerList]?
+
     enum CodingKeys: String, CodingKey {
         case channelID = "channelId"
         case markerLists
@@ -65,43 +65,43 @@ struct LiveChannelResponseElement: Codable {
 }
 
 // MARK: - MarkerList
-struct MarkerList: Codable {
-    var layer: Layer?
-    var markers: [Marker]?
+public struct MarkerList: Codable {
+    public var layer: Layer?
+    public var markers: [Marker]?
 }
 
-enum Layer: String, Codable {
+public enum Layer: String, Codable {
     case cut = "cut"
     case episode = "episode"
 }
 
 // MARK: - Marker
-struct Marker: Codable {
-    var assetGUID, consumptionInfo: String?
-    var layer: Layer?
-    var time: Int?
-    var timestamp: Timestamp?
-    var containerGUID: String?
-    var liveGame: Bool?
-    var cut: Cut?
-    var duration: Double?
-    var episode: Episode?
+public struct Marker: Codable {
+    public var assetGUID, consumptionInfo: String?
+    public var layer: Layer?
+    public var time: Int?
+    public var timestamp: Timestamp?
+    public var containerGUID: String?
+    public var liveGame: Bool?
+    public var cut: Cut?
+    public var duration: Double?
+    public var episode: Episode?
 }
 
 // MARK: - Cut
-struct Cut: Codable {
-    var legacyIDS: LegacyIDS?
-    var title: String?
-    var artists: [Artist]?
-    var album: Album?
-    var clipGUID, galaxyAssetID: String?
-    var memberOfSpotBlock: Bool?
-    var mref: String?
-    var externalIDS: [ExternalID]?
-    var spotBlockID: String?
-    var firstCutOfSpotBlock: Bool?
-    var contentInfo: String?
-    
+public struct Cut: Codable {
+    public var legacyIDS: LegacyIDS?
+    public var title: String?
+    public var artists: [Artist]?
+    public var album: Album?
+    public var clipGUID, galaxyAssetID: String?
+    public var memberOfSpotBlock: Bool?
+    public var mref: String?
+    public var externalIDS: [ExternalID]?
+    public var spotBlockID: String?
+    public var firstCutOfSpotBlock: Bool?
+    public var contentInfo: String?
+
     enum CodingKeys: String, CodingKey {
         case legacyIDS = "legacyIds"
         case title, artists, album, clipGUID
@@ -114,29 +114,29 @@ struct Cut: Codable {
 }
 
 // MARK: - Album
-struct Album: Codable {
-    var title: String?
+public struct Album: Codable {
+    public var title: String?
 }
 
 // MARK: - Artist
-struct Artist: Codable {
-    var name: String?
+public struct Artist: Codable {
+    public var name: String?
 }
 
 // MARK: - ExternalID
-struct ExternalID: Codable {
-    var id: ID?
-    var value: String?
+public struct ExternalID: Codable {
+    public var id: ID?
+    public var value: String?
 }
 
-enum ID: String, Codable {
+public enum ID: String, Codable {
     case iTunes = "iTunes"
 }
 
 // MARK: - LegacyIDS
-struct LegacyIDS: Codable {
-    var siriusXMID, pid: String?
-    
+public struct LegacyIDS: Codable {
+    public var siriusXMID, pid: String?
+
     enum CodingKeys: String, CodingKey {
         case siriusXMID = "siriusXMId"
         case pid
@@ -144,11 +144,11 @@ struct LegacyIDS: Codable {
 }
 
 // MARK: - Episode
-struct Episode: Codable {
-    var isLiveVideoEligible: Bool?
+public struct Episode: Codable {
+    public var isLiveVideoEligible: Bool?
 }
 
 // MARK: - Timestamp
-struct Timestamp: Codable {
-    var absolute: String?
+public struct Timestamp: Codable {
+    public var absolute: String?
 }

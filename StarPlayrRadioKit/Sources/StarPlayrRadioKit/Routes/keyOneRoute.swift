@@ -5,6 +5,7 @@
 //  Created by Todd Bruss on 9/5/22.
 //
 
+#if !os(watchOS)
 import Foundation
 import SwifterLite
 
@@ -15,3 +16,4 @@ func keyOneRoute() -> httpReq {{ request in
     
     return HttpResponse.ok(.data(data, contentType: "application/octet-stream"))
 }}
+#endif

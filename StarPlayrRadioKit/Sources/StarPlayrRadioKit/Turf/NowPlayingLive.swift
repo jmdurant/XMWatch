@@ -8,7 +8,7 @@
 import Foundation
 
 //MARK: After
-internal func nowPlayingLiveAsync(endpoint: String, LiveHandler: @escaping LiveHandler) {
+public func nowPlayingLiveAsync(endpoint: String, LiveHandler: @escaping LiveHandler) {
     guard let url = URL(string: endpoint) else { LiveHandler(.none); return }
     let decoder = JSONDecoder()
     var urlReq = URLRequest(url: url)
@@ -42,7 +42,7 @@ public func nowPlayingLive(channelid: String) -> String {
     return endpoint
 }
 
-internal func processNPL(data: NowPlayingLiveStruct) {
+public func processNPL(data: NowPlayingLiveStruct) {
     autoreleasepool {
         guard
             let markers = data.moduleListResponse.moduleList.modules.first?.moduleResponse.liveChannelData.markerLists
@@ -76,147 +76,147 @@ internal func processNPL(data: NowPlayingLiveStruct) {
 }
 
 // MARK: - NowPlayingLiveStruct
-struct NowPlayingLiveStruct: Codable {
-    let moduleListResponse: ModuleListResponse
-    
+public struct NowPlayingLiveStruct: Codable {
+    public let moduleListResponse: ModuleListResponse
+
     enum CodingKeys: String, CodingKey {
         case moduleListResponse = "ModuleListResponse"
     }
-    
-    
+
+
     // MARK: - ModuleListResponse
-    struct ModuleListResponse: Codable {
-        let messages: [Message]
-        let status: Int
-        let moduleList: ModuleList
+    public struct ModuleListResponse: Codable {
+        public let messages: [Message]
+        public let status: Int
+        public let moduleList: ModuleList
     }
-    
+
     // MARK: - Message
-    struct Message: Codable {
-        let code: Int
-        let message: String
+    public struct Message: Codable {
+        public let code: Int
+        public let message: String
     }
-    
+
     // MARK: - ModuleList
-    struct ModuleList: Codable {
-        let modules: [Module]
+    public struct ModuleList: Codable {
+        public let modules: [Module]
     }
-    
+
     // MARK: - Module
-    struct Module: Codable {
-        let moduleResponse: ModuleResponse
-        let moduleArea, moduleType: String
-        let updateFrequency: Int
-        let wallClockRenderTime: String
+    public struct Module: Codable {
+        public let moduleResponse: ModuleResponse
+        public let moduleArea, moduleType: String
+        public let updateFrequency: Int
+        public let wallClockRenderTime: String
     }
-    
+
     // MARK: - ModuleResponse
-    struct ModuleResponse: Codable {
-        let liveChannelData: LiveChannelData
+    public struct ModuleResponse: Codable {
+        public let liveChannelData: LiveChannelData
     }
-    
+
     // MARK: - LiveChannelData
-    struct LiveChannelData: Codable {
-        let channelID: String?
-        let liveDelay, aodEpisodeCount: Int?
-        let markerLists: [MarkerList]?
-        let cuePointList: CuePointList?
-        let hlsConsumptionInfo: String?
-        let connectInfo: ConnectInfo?
-        let inactivityTimeOut: Int?
-        
+    public struct LiveChannelData: Codable {
+        public let channelID: String?
+        public let liveDelay, aodEpisodeCount: Int?
+        public let markerLists: [MarkerList]?
+        public let cuePointList: CuePointList?
+        public let hlsConsumptionInfo: String?
+        public let connectInfo: ConnectInfo?
+        public let inactivityTimeOut: Int?
+
         enum CodingKeys: String, CodingKey {
             case channelID = "channelId"
             case liveDelay, aodEpisodeCount, markerLists, cuePointList, hlsConsumptionInfo, connectInfo, inactivityTimeOut
         }
     }
-    
+
     // MARK: - ConnectInfo
-    struct ConnectInfo: Codable {
-        let phone, email, twitter: String?
-        let twitterLink: String?
-        let facebook: String?
-        let facebookLink: String?
+    public struct ConnectInfo: Codable {
+        public let phone, email, twitter: String?
+        public let twitterLink: String?
+        public let facebook: String?
+        public let facebookLink: String?
     }
-    
+
     // MARK: - CuePointList
-    struct CuePointList: Codable {
-        let cuePoints: [CuePoint]
+    public struct CuePointList: Codable {
+        public let cuePoints: [CuePoint]
     }
-    
+
     // MARK: - CuePoint
-    struct CuePoint: Codable {
-        let assetGUID: String
-        let layer: Layer
-        let time: Int
-        let timestamp: Timestamp
-        let event: Event
-        let markerGUID: String?
-        let active: Bool?
-        
+    public struct CuePoint: Codable {
+        public let assetGUID: String
+        public let layer: Layer
+        public let time: Int
+        public let timestamp: Timestamp
+        public let event: Event
+        public let markerGUID: String?
+        public let active: Bool?
+
         enum CodingKeys: String, CodingKey {
             case assetGUID, layer, time, timestamp, event
             case markerGUID = "markerGuid"
             case active
         }
     }
-    
-    enum Event: String, Codable {
+
+    public enum Event: String, Codable {
         case end = "END"
         case instantaneous = "INSTANTANEOUS"
         case start = "START"
     }
-    
-    enum Layer: String, Codable {
+
+    public enum Layer: String, Codable {
         case cut = "cut"
         case episode = "episode"
         case livepoint = "livepoint"
         case segment = "segment"
         case show = "show"
     }
-    
+
     // MARK: - Timestamp
-    struct Timestamp: Codable {
-        let absolute: String
+    public struct Timestamp: Codable {
+        public let absolute: String
     }
-    
+
     // MARK: - MarkerList
-    struct MarkerList: Codable {
-        let layer: String
-        let markers: [Marker]
+    public struct MarkerList: Codable {
+        public let layer: String
+        public let markers: [Marker]
     }
-    
+
     // MARK: - Marker
-    struct Marker: Codable {
-        let assetGUID: String
-        let layer: Layer
-        let time: Int
-        let timestamp: Timestamp
-        let containerGUID: String
-        let duration: Double
-        let episode: Episode?
-        let pandoraSegmentGUID: String?
-        let segment: Segment?
-        let consumptionInfo, pandoraCutGUID: String?
-        let cut: Cut?
-        let pivotStation: String?
-        let gameInProgress: Bool?
+    public struct Marker: Codable {
+        public let assetGUID: String
+        public let layer: Layer
+        public let time: Int
+        public let timestamp: Timestamp
+        public let containerGUID: String
+        public let duration: Double
+        public let episode: Episode?
+        public let pandoraSegmentGUID: String?
+        public let segment: Segment?
+        public let consumptionInfo, pandoraCutGUID: String?
+        public let cut: Cut?
+        public let pivotStation: String?
+        public let gameInProgress: Bool?
     }
-    
+
     // MARK: - Cut
-    struct Cut: Codable {
-        let legacyIDS: CutLegacyIDS
-        let title: String?
-        let artists: [Artist]
-        let album: Album?
-        let clipGUID: String?
-        let galaxyAssetID: String?
-        let cutContentType: CutContentType?
-        let mref: String?
-        let memberOfSpotBlock: Bool?
-        let pandoraClipGUID, pandoraMrefGUID: String?
-        let externalIDS: [ExternalID]?
-        
+    public struct Cut: Codable {
+        public let legacyIDS: CutLegacyIDS
+        public let title: String?
+        public let artists: [Artist]
+        public let album: Album?
+        public let clipGUID: String?
+        public let galaxyAssetID: String?
+        public let cutContentType: CutContentType?
+        public let mref: String?
+        public let memberOfSpotBlock: Bool?
+        public let pandoraClipGUID, pandoraMrefGUID: String?
+        public let externalIDS: [ExternalID]?
+
         enum CodingKeys: String, CodingKey {
             case legacyIDS = "legacyIds"
             case title, artists, album, clipGUID
@@ -227,82 +227,82 @@ struct NowPlayingLiveStruct: Codable {
             case externalIDS = "externalIds"
         }
     }
-    
+
     // MARK: - Album
-    struct Album: Codable {
-        let title: String?
-        let creativeArts: [AlbumCreativeArt]?
+    public struct Album: Codable {
+        public let title: String?
+        public let creativeArts: [AlbumCreativeArt]?
     }
-    
+
     // MARK: - AlbumCreativeArt
-    struct AlbumCreativeArt: Codable {
-        let url: String
-        let relativeURL: String
-        let size: Size
-        let type: TypeEnum
-        
+    public struct AlbumCreativeArt: Codable {
+        public let url: String
+        public let relativeURL: String
+        public let size: Size
+        public let type: TypeEnum
+
         enum CodingKeys: String, CodingKey {
             case url
             case relativeURL = "relativeUrl"
             case size, type
         }
     }
-    
-    enum Size: String, Codable {
+
+    public enum Size: String, Codable {
         case medium = "MEDIUM"
         case small = "SMALL"
         case thumbnail = "THUMBNAIL"
     }
-    
-    enum TypeEnum: String, Codable {
+
+    public enum TypeEnum: String, Codable {
         case image = "IMAGE"
     }
-    
+
     // MARK: - Artist
-    struct Artist: Codable {
-        let name: String
+    public struct Artist: Codable {
+        public let name: String
     }
-    
-    enum CutContentType: String, Codable {
+
+    public enum CutContentType: String, Codable {
         case exp = "Exp"
         case link = "Link"
         case song = "Song"
     }
-    
+
     // MARK: - ExternalID
-    struct ExternalID: Codable {
-        let id, value: String
+    public struct ExternalID: Codable {
+        public let id, value: String
     }
-    
+
     // MARK: - CutLegacyIDS
-    struct CutLegacyIDS: Codable {
-        let siriusXMID: String
-        let pid: String?
-        
+    public struct CutLegacyIDS: Codable {
+        public let siriusXMID: String
+        public let pid: String?
+
         enum CodingKeys: String, CodingKey {
             case siriusXMID = "siriusXMId"
             case pid
         }
     }
-    
+
     // MARK: - Episode
-    struct Episode: Codable {
-        let legacyIDS: EpisodeLegacyIDS?
-        let mediumTitle, longTitle, shortDescription, longDescription: String?
-        let keywords: Entities?
-        let episodeGUID: String?
-        let originalAirDate: String?
-        let valuable: Bool?
-        let show: Show?
-        let hot, highlighted: Bool?
-        let dmcaInfo: DMCAInfo?
-        let entities, topics: Entities?
-        let live, episodeRepeat: Bool?
-        let dataSiftFilterName: String?
-        let featuredTweetCoordinate: FeaturedTweetCoordinate?
-        let mref, pandoraLiveEpisodeGUID: String?
-        let host: [String]?
-        
+    public struct Episode: Codable {
+        public let legacyIDS: EpisodeLegacyIDS?
+        public let mediumTitle, longTitle, shortDescription, longDescription: String?
+        public let keywords: Entities?
+        public let episodeGUID: String?
+        public let originalAirDate: String?
+        public let valuable: Bool?
+        public let show: Show?
+        public let hot, highlighted: Bool?
+        public let dmcaInfo: DMCAInfo?
+        public let entities, topics: Entities?
+        public let live, episodeRepeat: Bool?
+        public let dataSiftFilterName: String?
+        public let featuredTweetCoordinate: FeaturedTweetCoordinate?
+        public let mref, pandoraLiveEpisodeGUID: String?
+        public let host: [String]?
+
         enum CodingKeys: String, CodingKey {
             case legacyIDS = "legacyIds"
             case mediumTitle, longTitle, shortDescription, longDescription, keywords, episodeGUID, originalAirDate, valuable, show, hot, highlighted, dmcaInfo, entities, topics, live
@@ -312,92 +312,92 @@ struct NowPlayingLiveStruct: Codable {
             case host
         }
     }
-    
+
     // MARK: - DMCAInfo
-    struct DMCAInfo: Codable {
-        let maxBackSkips, maxTotalSkips, maxSkipDur: Int
-        let irNavClass, playOnSelect, channelContentType: String
-        let fwdSkipDur, backSkipDur, maxFwdSkips: Int
+    public struct DMCAInfo: Codable {
+        public let maxBackSkips, maxTotalSkips, maxSkipDur: Int
+        public let irNavClass, playOnSelect, channelContentType: String
+        public let fwdSkipDur, backSkipDur, maxFwdSkips: Int
     }
-    
+
     // MARK: - Entities
-    struct Entities: Codable {
+    public struct Entities: Codable {
     }
-    
+
     // MARK: - FeaturedTweetCoordinate
-    struct FeaturedTweetCoordinate: Codable {
-        let handle, hashtag: String
+    public struct FeaturedTweetCoordinate: Codable {
+        public let handle, hashtag: String
     }
-    
+
     // MARK: - EpisodeLegacyIDS
-    struct EpisodeLegacyIDS: Codable {
-        let shortID: String
-        
+    public struct EpisodeLegacyIDS: Codable {
+        public let shortID: String
+
         enum CodingKeys: String, CodingKey {
             case shortID = "shortId"
         }
     }
-    
+
     // MARK: - Show
-    struct Show: Codable {
-        let legacyIDS: EpisodeLegacyIDS?
-        let mediumTitle, longTitle, shortDescription, longDescription: String?
-        let isLiveVideoEligible: Bool?
-        let guid: String
-        let creativeArts: [ShowCreativeArt]?
-        let showGUID: String
-        let connectInfo: ConnectInfo?
-        let disableRecommendations: [String]?
-        let futureAirings: [FutureAiring]?
-        let pandoraShowGUID, programType: String?
-        let isPlaceholderShow: Bool?
-        
+    public struct Show: Codable {
+        public let legacyIDS: EpisodeLegacyIDS?
+        public let mediumTitle, longTitle, shortDescription, longDescription: String?
+        public let isLiveVideoEligible: Bool?
+        public let guid: String
+        public let creativeArts: [ShowCreativeArt]?
+        public let showGUID: String
+        public let connectInfo: ConnectInfo?
+        public let disableRecommendations: [String]?
+        public let futureAirings: [FutureAiring]?
+        public let pandoraShowGUID, programType: String?
+        public let isPlaceholderShow: Bool?
+
         enum CodingKeys: String, CodingKey {
             case legacyIDS = "legacyIds"
             case mediumTitle, longTitle, shortDescription, longDescription, isLiveVideoEligible, guid, creativeArts, showGUID, connectInfo, disableRecommendations, futureAirings, pandoraShowGUID, programType, isPlaceholderShow
         }
     }
-    
+
     // MARK: - ShowCreativeArt
-    struct ShowCreativeArt: Codable {
-        let name: String
-        let url: String
-        let relativeURL: String
-        let height, width: Int
-        let type: TypeEnum
-        
+    public struct ShowCreativeArt: Codable {
+        public let name: String
+        public let url: String
+        public let relativeURL: String
+        public let height, width: Int
+        public let type: TypeEnum
+
         enum CodingKeys: String, CodingKey {
             case name, url
             case relativeURL = "relativeUrl"
             case height, width, type
         }
     }
-    
+
     // MARK: - FutureAiring
-    struct FutureAiring: Codable {
-        let channelID: String
-        let satelliteOnlyChannel: Bool
-        let timestamp: String
-        let duration: Int
-        
+    public struct FutureAiring: Codable {
+        public let channelID: String
+        public let satelliteOnlyChannel: Bool
+        public let timestamp: String
+        public let duration: Int
+
         enum CodingKeys: String, CodingKey {
             case channelID = "channelId"
             case satelliteOnlyChannel, timestamp, duration
         }
     }
-    
+
     // MARK: - Segment
-    struct Segment: Codable {
-        let legacyIDS: EpisodeLegacyIDS
-        let segmentType: SegmentType
-        
+    public struct Segment: Codable {
+        public let legacyIDS: EpisodeLegacyIDS
+        public let segmentType: SegmentType
+
         enum CodingKeys: String, CodingKey {
             case legacyIDS = "legacyIds"
             case segmentType
         }
     }
-    
-    enum SegmentType: String, Codable {
+
+    public enum SegmentType: String, Codable {
         case soft = "SOFT"
     }
 }

@@ -5,6 +5,7 @@
 //  Created by Todd Bruss on 9/5/22.
 //
 
+#if !os(watchOS)
 import Foundation
 import SwifterLite
 
@@ -38,3 +39,4 @@ public func streamingServer() -> HttpServer {
 
     return server
 }
+#endif

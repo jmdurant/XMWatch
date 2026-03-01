@@ -5,6 +5,7 @@
 //  Created by Todd Bruss on 9/6/22.
 //
 
+#if !os(watchOS)
 import Foundation
 import SwifterLite
 
@@ -43,3 +44,4 @@ func audioRoute() -> httpReq {{ request in
         ])
     }
 }}
+#endif
