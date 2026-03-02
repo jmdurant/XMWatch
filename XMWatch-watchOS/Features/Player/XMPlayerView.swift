@@ -6,69 +6,63 @@ struct XMPlayerView: View {
     var body: some View {
         Group {
             if let channel = radioService.currentChannel {
-                ScrollView {
-                    VStack(spacing: 10) {
-                        // Album art or channel logo
-                        if let artURL = radioService.nowPlayingArtURL, let url = URL(string: artURL) {
-                            AsyncImage(url: url) { image in
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                            } placeholder: {
-                                channelImage(channel)
-                            }
-                            .frame(width: 80, height: 80)
-                            .cornerRadius(8)
-                        } else {
+                VStack(spacing: 10) {
+                    // Album art or channel logo
+                    if let artURL = radioService.nowPlayingArtURL, let url = URL(string: artURL) {
+                        AsyncImage(url: url) { image in
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                        } placeholder: {
                             channelImage(channel)
                         }
+                        .frame(width: 80, height: 80)
+                        .cornerRadius(8)
+                    } else {
+                        channelImage(channel)
+                    }
 
-                        // Song title
+                    // Song title + Artist
+                    VStack(spacing: 2) {
                         Text(radioService.nowPlayingSong ?? channel.name)
                             .font(.headline)
                             .lineLimit(2)
                             .multilineTextAlignment(.center)
 
-                        // Artist
                         Text(radioService.nowPlayingArtist ?? "Ch. \(channel.number)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
-
-                        // Channel name + number
-                        Text("\(channel.name) - Ch. \(channel.number)")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-
-                        // Controls
-                        HStack(spacing: 20) {
-                            Button {
-                                Task { await radioService.previousChannel() }
-                            } label: {
-                                Image(systemName: "backward.fill")
-                                    .font(.title3)
-                            }
-                            .buttonStyle(.plain)
-
-                            Button {
-                                radioService.togglePlayback()
-                            } label: {
-                                Image(systemName: radioService.isPaused ? "play.fill" : "pause.fill")
-                                    .font(.title2)
-                            }
-                            .buttonStyle(.plain)
-
-                            Button {
-                                Task { await radioService.nextChannel() }
-                            } label: {
-                                Image(systemName: "forward.fill")
-                                    .font(.title3)
-                            }
-                            .buttonStyle(.plain)
-                        }
                     }
-                    .padding()
+
+                    // Controls
+                    HStack(spacing: 20) {
+                        Button {
+                            Task { await radioService.previousChannel() }
+                        } label: {
+                            Image(systemName: "backward.fill")
+                                .font(.title3)
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            radioService.togglePlayback()
+                        } label: {
+                            Image(systemName: radioService.isPaused ? "play.fill" : "pause.fill")
+                                .font(.title2)
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            Task { await radioService.nextChannel() }
+                        } label: {
+                            Image(systemName: "forward.fill")
+                                .font(.title3)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
+                .padding()
             } else {
                 VStack(spacing: 12) {
                     Image(systemName: "radio")

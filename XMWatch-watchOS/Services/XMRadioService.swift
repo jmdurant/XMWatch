@@ -54,6 +54,7 @@ final class XMRadioService {
     private func dbg(_ msg: String) {
         debugLog += "\n" + msg
         log.info("\(msg)")
+        writeDebug(msg)
     }
 
     // MARK: - Async Session (replaces Session() to avoid semaphore deadlocks)
@@ -361,13 +362,7 @@ final class XMRadioService {
 
         let proxyPort = XMHLSProxyServer.shared.port
 
-        await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
-            DispatchQueue.global(qos: .userInitiated).async {
-                Session(channelid: channel.id, updateToken: true, updateUser: true)
-                cont.resume()
-            }
-        }
-
+        let _ = await asyncSession(channelId: channel.id)
         tokenRefreshTime = currentTimeMs()
 
         guard proxyPort != 0 else { return nil }
@@ -386,12 +381,7 @@ final class XMRadioService {
         guard let channel = currentChannel else { return }
         let elapsed = currentTimeMs() - tokenRefreshTime
         if elapsed >= 480_000 {
-            await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
-                DispatchQueue.global(qos: .userInitiated).async {
-                    Session(channelid: channel.id, updateToken: true, updateUser: false)
-                    cont.resume()
-                }
-            }
+            let _ = await asyncSession(channelId: channel.id)
             tokenRefreshTime = currentTimeMs()
         }
     }
@@ -401,61 +391,81 @@ final class XMRadioService {
     func updateNowPlaying() async {
         guard let channel = currentChannel else { return }
 
-        await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let endpoint = nowPlayingLive(channelid: channel.id)
-                nowPlayingLiveAsync(endpoint: endpoint) { data in
-                    guard let data else {
-                        cont.resume()
-                        return
-                    }
-                    processNPL(data: data)
+        let endpoint = nowPlayingLive(channelid: channel.id)
+        dbg("[NPL] fetching for ch \(channel.number) (\(channel.name)) id=\(channel.id)")
+        guard let url = URL(string: endpoint) else { return }
 
-                    let markers = data.moduleListResponse.moduleList.modules.first?.moduleResponse.liveChannelData.markerLists
-                    if let cutLayer = markers?.first(where: { $0.layer == "cut" }),
-                       let marker = cutLayer.markers.first {
-                        let artist = marker.cut?.artists.first?.name
-                        let song = marker.cut?.title
-                        var artURL: String?
+        var urlReq = URLRequest(url: url)
+        urlReq.httpMethod = "GET"
+        urlReq.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        urlReq.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlReq.timeoutInterval = 60
 
-                        if let a = artist, let s = song, let key = sha256(a + s), let image = MemBase[key] {
-                            artURL = image
-                        }
+        do {
+            let (data, _) = try await URLSession.shared.data(for: urlReq)
+            let nplData = try JSONDecoder().decode(NowPlayingLiveStruct.self, from: data)
 
-                        Task { @MainActor in
-                            self.nowPlayingArtist = artist
-                            self.nowPlayingSong = song
-                            self.nowPlayingArtURL = artURL
+            let apiChannelId = nplData.moduleListResponse.moduleList.modules.first?.moduleResponse.liveChannelData.channelID
+            dbg("[NPL] API returned channelId=\(apiChannelId ?? "nil")")
 
-                            if var ch = self.currentChannel {
-                                ch.artist = artist
-                                ch.song = song
-                                ch.albumArtURL = artURL
-                                self.currentChannel = ch
-                            }
-                        }
-                    }
-                    cont.resume()
+            processNPL(data: nplData)
+
+            let markers = nplData.moduleListResponse.moduleList.modules.first?.moduleResponse.liveChannelData.markerLists
+            if let cutLayer = markers?.first(where: { $0.layer == "cut" }) {
+                // Prefer song-type cuts over promos/links; fall back to last marker
+                let songMarker = cutLayer.markers.last(where: { $0.cut?.cutContentType == .song })
+                    ?? cutLayer.markers.last
+                guard let marker = songMarker else {
+                    dbg("[NPL] no markers found")
+                    return
                 }
+                let artist = marker.cut?.artists.first?.name
+                let song = marker.cut?.title
+                var artURL: String?
+
+                if let a = artist, let s = song, let key = sha256(a + s), let image = MemBase[key] {
+                    artURL = image
+                }
+
+                dbg("[NPL] result: \(artist ?? "nil") - \(song ?? "nil") (type: \(marker.cut?.cutContentType?.rawValue ?? "nil"))")
+
+                self.nowPlayingArtist = artist
+                self.nowPlayingSong = song
+                self.nowPlayingArtURL = artURL
+
+                if var ch = self.currentChannel {
+                    ch.artist = artist
+                    ch.song = song
+                    ch.albumArtURL = artURL
+                    self.currentChannel = ch
+                }
+            } else {
+                dbg("[NPL] no cut layer found in markers")
             }
+        } catch {
+            dbg("[NPL] error: \(error)")
         }
     }
 
     // MARK: - PDT Cache
 
     func updatePDTCache() async {
-        let pdtData: [String: Any] = await withCheckedContinuation { (cont: CheckedContinuation<[String: Any], Never>) in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let endpoint = PDTendpoint()
-                var result: [String: Any] = [:]
+        let endpoint = PDTendpoint()
+        guard let url = URL(string: endpoint) else { return }
 
-                GetPdtSync(endpoint: endpoint, method: "pdt") { data in
-                    guard let data else { return }
-                    result = processPDT(data: data)
-                }
+        var urlReq = URLRequest(url: url)
+        urlReq.httpMethod = "GET"
+        urlReq.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        urlReq.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlReq.timeoutInterval = 60
 
-                cont.resume(returning: result)
-            }
+        var pdtData: [String: Any] = [:]
+        do {
+            let (data, _) = try await URLSession.shared.data(for: urlReq)
+            let decoded = try JSONDecoder().decode(DiscoverChannelList.self, from: data)
+            pdtData = processPDT(data: decoded)
+        } catch {
+            // PDT fetch failed, keep existing cache
         }
 
         pdtCache = pdtData
@@ -475,6 +485,14 @@ final class XMRadioService {
 
     func startPlayback(channel: XMChannel) async {
         currentChannel = channel
+
+        // Save as last played channel for resume-on-open
+        UserDefaults.standard.set(channel.number, forKey: "xm_last_channel")
+
+        // Clear stale now playing info from previous channel
+        nowPlayingArtist = nil
+        nowPlayingSong = nil
+        nowPlayingArtURL = nil
 
         // Start HLS proxy if not running
         if !proxyServer.isRunning {
@@ -600,6 +618,18 @@ final class XMRadioService {
                 await refreshTokenIfNeeded()
             }
         }
+    }
+
+    // MARK: - Resume Last Channel
+
+    func resumeLastChannelIfEnabled() async {
+        guard UserDefaults.standard.bool(forKey: "xm_resume_last_channel"),
+              let lastNumber = UserDefaults.standard.string(forKey: "xm_last_channel"),
+              let channel = channels.first(where: { $0.number == lastNumber }) else {
+            return
+        }
+        dbg("resuming last channel: \(channel.name) (Ch. \(channel.number))")
+        await startPlayback(channel: channel)
     }
 
     // MARK: - Sign Out

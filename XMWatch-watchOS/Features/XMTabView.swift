@@ -26,5 +26,12 @@ struct XMTabView: View {
             }
             .tag(3)
         }
+        .task {
+            if UserDefaults.standard.bool(forKey: "xm_resume_last_channel"),
+               UserDefaults.standard.string(forKey: "xm_last_channel") != nil {
+                await radioService.resumeLastChannelIfEnabled()
+                selectedTab = 0  // Switch to Now Playing tab
+            }
+        }
     }
 }

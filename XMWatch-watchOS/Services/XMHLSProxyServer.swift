@@ -172,12 +172,7 @@ final class XMHLSProxyServer: @unchecked Sendable {
 
             // Refresh token if needed (every 480 seconds)
             if (self.currentTimeMs() - self.tokenRefreshTime) >= 480_000 {
-                await withCheckedContinuation { cont in
-                    DispatchQueue.global().async {
-                        Session(channelid: channelId, updateToken: true, updateUser: false)
-                        cont.resume()
-                    }
-                }
+                await self.asyncTokenRefresh(channelId: channelId)
                 self.tokenRefreshTime = self.currentTimeMs()
             }
 
@@ -364,6 +359,64 @@ final class XMHLSProxyServer: @unchecked Sendable {
 
     private func removeConnection(_ connection: NWConnection) {
         activeConnections.removeAll { $0 === connection }
+    }
+
+    private func asyncTokenRefresh(channelId: String) async {
+        let timeInterval = Date().timeIntervalSince1970
+        let intTime = Int(timeInterval * 1000)
+        let time = String(intTime)
+
+        let endpoint = "\(http)\(root)/resume?channelId=\(channelId)&contentType=live&timestamp=\(time)&cacheBuster=\(time)"
+        let request: [String: Any] = [
+            "moduleList": [
+                "modules": [
+                    ["moduleRequest": [
+                        "resultTemplate": "web",
+                        "deviceInfo": [
+                            "osVersion": "Mac",
+                            "platform": "Web",
+                            "clientDeviceType": "web",
+                            "sxmAppVersion": "3.1802.10011.0",
+                            "browser": "Safari",
+                            "browserVersion": "11.0.3",
+                            "appRegion": appRegion,
+                            "deviceModel": "K2WebClient",
+                            "player": "html5",
+                            "clientDeviceId": "null"
+                        ]
+                    ]]
+                ]
+            ]
+        ]
+
+        guard let url = URL(string: endpoint) else { return }
+        var urlReq = URLRequest(url: url)
+        urlReq.httpMethod = "POST"
+        urlReq.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        urlReq.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlReq.httpBody = try? JSONSerialization.data(withJSONObject: request, options: .prettyPrinted)
+        urlReq.timeoutInterval = 60
+
+        do {
+            let (_, response) = try await URLSession.shared.data(for: urlReq)
+            guard let httpResp = response as? HTTPURLResponse, httpResp.statusCode == 200 else { return }
+
+            if let fields = httpResp.allHeaderFields as? [String: String],
+               let respURL = httpResp.url {
+                let cookies = HTTPCookie.cookies(withResponseHeaderFields: fields, for: respURL)
+                HTTPCookieStorage.shared.setCookies(cookies, for: respURL, mainDocumentURL: URL(string: http + root))
+                for cookie in cookies where cookie.name == "SXMAKTOKEN" {
+                    let t = cookie.value
+                    if t.count > 44 {
+                        userX.token = String(t[t.index(t.startIndex, offsetBy: 3)...t.index(t.startIndex, offsetBy: 45)])
+                        UserDefaults.standard.set(userX.token, forKey: "token")
+                    }
+                }
+            }
+            writeDebug("[XMHLSProxy] token refreshed")
+        } catch {
+            writeDebug("[XMHLSProxy] token refresh failed: \(error)")
+        }
     }
 
     private func currentTimeMs() -> Int {
