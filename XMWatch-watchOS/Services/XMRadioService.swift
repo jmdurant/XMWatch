@@ -31,6 +31,8 @@ final class XMRadioService {
     private var proxyServer = XMHLSProxyServer.shared
     private var pdtTimer: Task<Void, Never>?
     private var tokenTimer: Task<Void, Never>?
+    private var retryCount: Int = 0
+    private let maxRetries: Int = 3
 
     var favoriteChannelNumbers: Set<String> {
         didSet { saveFavorites() }
@@ -527,8 +529,18 @@ final class XMRadioService {
             }
         }
 
-        controller.onPlaybackEnded = {
-            log.info("playback ended")
+        controller.onPlaybackEnded = { [weak self] in
+            writeDebug("[RadioService] playback ended")
+            Task { @MainActor in
+                await self?.handlePlaybackInterruption()
+            }
+        }
+
+        controller.onPlaybackFailed = { [weak self] error in
+            writeDebug("[RadioService] playback FAILED: \(error?.localizedDescription ?? "unknown")")
+            Task { @MainActor in
+                await self?.handlePlaybackInterruption()
+            }
         }
 
         // Now playing manager
@@ -546,6 +558,7 @@ final class XMRadioService {
         dbg("playing \(proxyURL.absoluteString)")
         controller.play(proxyURL)
         isPaused = false
+        retryCount = 0  // Reset on successful play attempt
 
         // Set metadata AFTER play so audio session is active and system registers us as Now Playing app
         manager.updateMetadata(
@@ -616,6 +629,61 @@ final class XMRadioService {
                 try? await Task.sleep(nanoseconds: 300_000_000_000)
                 guard !Task.isCancelled else { break }
                 await refreshTokenIfNeeded()
+            }
+        }
+    }
+
+    // MARK: - Session Recovery
+
+    private func handlePlaybackInterruption() async {
+        guard let channel = currentChannel, retryCount < maxRetries else {
+            if retryCount >= maxRetries {
+                dbg("max retries (\(maxRetries)) reached, giving up")
+                retryCount = 0
+            }
+            return
+        }
+
+        retryCount += 1
+        dbg("playback interrupted, retry \(retryCount)/\(maxRetries) — re-establishing session")
+
+        // Wait briefly before retrying (exponential backoff)
+        let delaySeconds = UInt64(retryCount) * 2
+        try? await Task.sleep(nanoseconds: delaySeconds * 1_000_000_000)
+
+        // Re-establish session with fresh token
+        let sessionOk = await asyncSession(channelId: channel.id)
+        dbg("session re-established: \(sessionOk)")
+
+        if sessionOk {
+            // Restart playback from scratch
+            await startPlayback(channel: channel)
+        } else {
+            dbg("session recovery failed, will retry")
+            await handlePlaybackInterruption()
+        }
+    }
+
+    /// Called when app returns to foreground to ensure session is still valid
+    func refreshSessionOnForeground() async {
+        guard let channel = currentChannel else { return }
+        dbg("foreground: refreshing session for \(channel.name)")
+
+        let sessionOk = await asyncSession(channelId: channel.id)
+        tokenRefreshTime = currentTimeMs()
+        dbg("foreground session refresh: \(sessionOk)")
+
+        // If player is dead or stalled, restart playback
+        if let controller = playerController {
+            let rate = controller.player?.rate ?? 0
+            let status = controller.player?.currentItem?.status.rawValue ?? -1
+            dbg("foreground: player rate=\(rate) status=\(status)")
+
+            if rate == 0 && status != 0 {
+                // Player exists but isn't playing and isn't still loading — restart
+                dbg("foreground: player stalled, restarting playback")
+                retryCount = 0
+                await startPlayback(channel: channel)
             }
         }
     }

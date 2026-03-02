@@ -9,6 +9,10 @@ packages:
   StarPlayrRadioKit:
     path: ../StarPlayrRadioKit
 
+configs:
+  Debug: debug
+  Release: release
+
 targets:
   XMWatch-watchOS:
     type: application
@@ -20,6 +24,7 @@ targets:
       - path: Models
       - path: Player
       - path: Services
+      - path: Assets.xcassets
     dependencies:
       - package: StarPlayrRadioKit
     settings:
@@ -32,3 +37,12 @@ targets:
         PRODUCT_NAME: XMWatch-watchOS
         SWIFT_VERSION: "5.9"
         GENERATE_INFOPLIST_FILE: false
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+      configs:
+        Release:
+          SWIFT_OPTIMIZATION_LEVEL: -O
+          DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+          SWIFT_COMPILATION_MODE: wholemodule

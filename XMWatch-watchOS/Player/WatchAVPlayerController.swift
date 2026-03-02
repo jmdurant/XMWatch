@@ -23,6 +23,7 @@ final class WatchAVPlayerController: PlayerCoordinating {
     private var durationObservation: NSKeyValueObservation?
     var onPropertyChange: ((PlayerProperty, Any?) -> Void)?
     var onPlaybackEnded: (() -> Void)?
+    var onPlaybackFailed: ((Error?) -> Void)?
     var onMediaLoaded: (() -> Void)?
 
     init(options: PlayerOptions) {}
@@ -201,6 +202,7 @@ final class WatchAVPlayerController: PlayerCoordinating {
                     self?.onMediaLoaded?()
                 case .failed:
                     writeDebug("[WatchAVPlayer] FAILED: \(item.error?.localizedDescription ?? "unknown")")
+                    self?.onPlaybackFailed?(item.error)
                 default:
                     break
                 }
