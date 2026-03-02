@@ -524,7 +524,7 @@ final class XMRadioService {
             Task { @MainActor in await self?.previousChannel() }
         }
 
-        // Play — this activates the audio session
+        // Play — activates audio session, then starts playback
         dbg("playing \(proxyURL.absoluteString)")
         controller.play(proxyURL)
         isPaused = false
@@ -541,6 +541,14 @@ final class XMRadioService {
         // Start PDT polling & token refresh
         startPDTPolling()
         startTokenRefresh()
+
+        // Log player state periodically for debugging
+        Task { @MainActor in
+            for i in 1...5 {
+                try? await Task.sleep(nanoseconds: UInt64(i) * 2_000_000_000)
+                controller.logPlayerState()
+            }
+        }
     }
 
     func togglePlayback() {

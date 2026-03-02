@@ -187,12 +187,16 @@ final class XMHLSProxyServer: @unchecked Sendable {
             }
 
             guard !playlistText.isEmpty else {
+                writeDebug("[XMHLSProxy] playlist fetch EMPTY for ch \(channelNumber)")
                 self.sendErrorResponse(status: 502, message: "Failed to fetch playlist", to: connection)
                 return
             }
 
+            writeDebug("[XMHLSProxy] playlist fetched, \(playlistText.count) bytes for ch \(channelNumber)")
+
             // Rewrite the m3u8 to route through our proxy
             let rewritten = self.rewriteM3U8(playlistText, channelId: channelId)
+            writeDebug("[XMHLSProxy] rewritten m3u8:\n\(rewritten.prefix(500))")
 
             if let body = rewritten.data(using: .utf8) {
                 self.sendResponse(status: 200, contentType: "application/vnd.apple.mpegurl", body: body, to: connection)
@@ -220,10 +224,12 @@ final class XMHLSProxyServer: @unchecked Sendable {
             }
 
             guard !audioData.isEmpty else {
+                writeDebug("[XMHLSProxy] audio segment EMPTY: \(segment)")
                 self.sendErrorResponse(status: 502, message: "Failed to fetch audio", to: connection)
                 return
             }
 
+            writeDebug("[XMHLSProxy] audio segment \(segment): \(audioData.count) bytes")
             self.sendResponse(status: 200, contentType: "audio/aac", body: audioData, to: connection)
         }
     }
@@ -231,11 +237,14 @@ final class XMHLSProxyServer: @unchecked Sendable {
     // MARK: - Key Route (/key)
 
     private func handleKeyRequest(to connection: NWConnection) {
+        writeDebug("[XMHLSProxy] key request, userX.key length=\(userX.key.count)")
         guard let data = Data(base64Encoded: userX.key) else {
+            writeDebug("[XMHLSProxy] key decode FAILED")
             sendErrorResponse(status: 404, message: "No key available", to: connection)
             return
         }
 
+        writeDebug("[XMHLSProxy] serving key: \(data.count) bytes")
         sendResponse(status: 200, contentType: "application/octet-stream", body: data, to: connection)
     }
 
@@ -250,9 +259,7 @@ final class XMHLSProxyServer: @unchecked Sendable {
         // Prefix AAC segment filenames with /aac/
         playlist = playlist.replacingOccurrences(of: channelId, with: "/aac/" + channelId)
 
-        // Fix duration for better PDT sync
-        playlist = playlist.replacingOccurrences(of: "#EXT-X-TARGETDURATION:10", with: "#EXT-X-TARGETDURATION:9")
-        playlist = playlist.replacingOccurrences(of: "#EXTINF:10,", with: "#EXTINF:1,")
+        // Keep original segment durations — don't rewrite EXTINF values
 
         // Rewrite any remaining absolute URLs to go through localhost
         let lines = playlist.components(separatedBy: "\n")

@@ -29,11 +29,12 @@ final class WatchAVPlayerController: PlayerCoordinating {
 
     private func configureAudioSession() {
         let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .default, policy: .longFormAudio)
+        try? session.setCategory(.playback, mode: .moviePlayback, policy: .longFormAudio)
         session.activate(options: []) { activated, error in
             if let error {
-                debugPrint("Audio session activation failed:", error)
+                writeDebug("[WatchAVPlayer] Audio session activation failed: \(error)")
             }
+            writeDebug("[WatchAVPlayer] Audio session activated: \(activated)")
         }
     }
 
@@ -46,6 +47,22 @@ final class WatchAVPlayerController: PlayerCoordinating {
         player?.audiovisualBackgroundPlaybackPolicy = .continuesIfPossible
         setupObservers()
         player?.play()
+        writeDebug("[WatchAVPlayer] player.play() called, rate=\(player?.rate ?? -1), timeControlStatus=\(player?.timeControlStatus.rawValue ?? -1)")
+    }
+
+    /// Periodically log player state for debugging
+    func logPlayerState() {
+        guard let player else {
+            writeDebug("[WatchAVPlayer] logState: no player")
+            return
+        }
+        let status = player.currentItem?.status.rawValue ?? -1
+        let rate = player.rate
+        let tcs = player.timeControlStatus.rawValue
+        let err = player.currentItem?.error?.localizedDescription ?? "none"
+        let route = AVAudioSession.sharedInstance().currentRoute
+        let outputs = route.outputs.map { "\($0.portName)(\($0.portType.rawValue))" }.joined(separator: ", ")
+        writeDebug("[WatchAVPlayer] state: itemStatus=\(status) rate=\(rate) timeCtrl=\(tcs) err=\(err) audioRoute=[\(outputs)]")
     }
 
     func togglePlayback() {
@@ -186,6 +203,7 @@ final class WatchAVPlayerController: PlayerCoordinating {
 
         rateObservation = player.observe(\.rate) { [weak self] player, _ in
             Task { @MainActor in
+                writeDebug("[WatchAVPlayer] rate changed to \(player.rate)")
                 self?.onPropertyChange?(.pause, player.rate == 0)
             }
         }

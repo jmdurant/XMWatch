@@ -1,0 +1,34 @@
+name: XMWatch-watchOS
+options:
+  bundleIdPrefix: com.starplayrx
+  deploymentTarget:
+    watchOS: "26.0"
+  xcodeVersion: "26.2"
+
+packages:
+  StarPlayrRadioKit:
+    path: ../StarPlayrRadioKit
+
+targets:
+  XMWatch-watchOS:
+    type: application
+    platform: watchOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: XMWatchApp.swift
+      - path: Features
+      - path: Models
+      - path: Player
+      - path: Services
+    dependencies:
+      - package: StarPlayrRadioKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.starplayrx.xmwatch.watchos
+        INFOPLIST_FILE: Info.plist
+        CODE_SIGN_ENTITLEMENTS: XMWatch-watchOS.entitlements
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: PHS5V2FW3J
+        PRODUCT_NAME: XMWatch-watchOS
+        SWIFT_VERSION: "5.9"
+        GENERATE_INFOPLIST_FILE: false
