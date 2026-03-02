@@ -154,7 +154,7 @@ final class XMHLSProxyServer: @unchecked Sendable {
     // MARK: - Playlist Route (/{channelNumber}.m3u8)
 
     private func handlePlaylistRequest(path: String, to connection: NWConnection) {
-        Task.detached { [weak self] in
+        Task { [weak self] in
             guard let self else { return }
 
             // Extract channel number from path like "/2.m3u8"
@@ -172,36 +172,46 @@ final class XMHLSProxyServer: @unchecked Sendable {
 
             // Refresh token if needed (every 480 seconds)
             if (self.currentTimeMs() - self.tokenRefreshTime) >= 480_000 {
-                Session(channelid: channelId, updateToken: true, updateUser: false)
+                await withCheckedContinuation { cont in
+                    DispatchQueue.global().async {
+                        Session(channelid: channelId, updateToken: true, updateUser: false)
+                        cont.resume()
+                    }
+                }
                 self.tokenRefreshTime = self.currentTimeMs()
             }
 
             // Get the playlist URL from StarPlayrRadioKit
             let source = Playlist(channelid: channelId)
 
-            // Fetch the m3u8 content
-            var playlistText = ""
-            TextSync(endpoint: source) { text in
-                guard let text else { return }
-                playlistText = text
-            }
-
-            guard !playlistText.isEmpty else {
-                writeDebug("[XMHLSProxy] playlist fetch EMPTY for ch \(channelNumber)")
-                self.sendErrorResponse(status: 502, message: "Failed to fetch playlist", to: connection)
+            // Fetch the m3u8 content using async URLSession
+            guard let url = URL(string: source) else {
+                self.sendErrorResponse(status: 502, message: "Bad playlist URL", to: connection)
                 return
             }
 
-            writeDebug("[XMHLSProxy] playlist fetched, \(playlistText.count) bytes for ch \(channelNumber)")
+            do {
+                let (data, _) = try await URLSession.shared.data(from: url)
+                guard let playlistText = String(data: data, encoding: .utf8), !playlistText.isEmpty else {
+                    writeDebug("[XMHLSProxy] playlist fetch EMPTY for ch \(channelNumber)")
+                    self.sendErrorResponse(status: 502, message: "Failed to fetch playlist", to: connection)
+                    return
+                }
 
-            // Rewrite the m3u8 to route through our proxy
-            let rewritten = self.rewriteM3U8(playlistText, channelId: channelId)
-            writeDebug("[XMHLSProxy] rewritten m3u8:\n\(rewritten.prefix(500))")
+                writeDebug("[XMHLSProxy] playlist fetched, \(playlistText.count) bytes for ch \(channelNumber)")
 
-            if let body = rewritten.data(using: .utf8) {
-                self.sendResponse(status: 200, contentType: "application/vnd.apple.mpegurl", body: body, to: connection)
-            } else {
-                self.sendErrorResponse(status: 500, message: "Failed to encode playlist", to: connection)
+                // Rewrite the m3u8 to route through our proxy
+                let rewritten = self.rewriteM3U8(playlistText, channelId: channelId)
+                writeDebug("[XMHLSProxy] rewritten m3u8:\n\(rewritten.prefix(500))")
+
+                if let body = rewritten.data(using: .utf8) {
+                    self.sendResponse(status: 200, contentType: "application/vnd.apple.mpegurl", body: body, to: connection)
+                } else {
+                    self.sendErrorResponse(status: 500, message: "Failed to encode playlist", to: connection)
+                }
+            } catch {
+                writeDebug("[XMHLSProxy] playlist fetch error: \(error)")
+                self.sendErrorResponse(status: 502, message: "Fetch failed", to: connection)
             }
         }
     }
@@ -209,7 +219,7 @@ final class XMHLSProxyServer: @unchecked Sendable {
     // MARK: - Audio Route (/aac/{segment})
 
     private func handleAudioRequest(path: String, to connection: NWConnection) {
-        Task.detached { [weak self] in
+        Task { [weak self] in
             guard let self else { return }
 
             // Extract segment name from /aac/{segment}
@@ -217,20 +227,26 @@ final class XMHLSProxyServer: @unchecked Sendable {
 
             let endpoint = AudioX(data: segment, channelId: userX.channel)
 
-            var audioData = Data()
-            dataSync(endpoint: endpoint, method: "audio/aac") { data in
-                guard let data else { return }
-                audioData = data
-            }
-
-            guard !audioData.isEmpty else {
-                writeDebug("[XMHLSProxy] audio segment EMPTY: \(segment)")
-                self.sendErrorResponse(status: 502, message: "Failed to fetch audio", to: connection)
+            guard let url = URL(string: endpoint) else {
+                self.sendErrorResponse(status: 502, message: "Bad audio URL", to: connection)
                 return
             }
 
-            writeDebug("[XMHLSProxy] audio segment \(segment): \(audioData.count) bytes")
-            self.sendResponse(status: 200, contentType: "audio/aac", body: audioData, to: connection)
+            do {
+                let (audioData, _) = try await URLSession.shared.data(from: url)
+
+                guard !audioData.isEmpty else {
+                    writeDebug("[XMHLSProxy] audio segment EMPTY: \(segment)")
+                    self.sendErrorResponse(status: 502, message: "Failed to fetch audio", to: connection)
+                    return
+                }
+
+                writeDebug("[XMHLSProxy] audio segment \(segment): \(audioData.count) bytes")
+                self.sendResponse(status: 200, contentType: "audio/aac", body: audioData, to: connection)
+            } catch {
+                writeDebug("[XMHLSProxy] audio fetch error: \(error)")
+                self.sendErrorResponse(status: 502, message: "Fetch failed", to: connection)
+            }
         }
     }
 

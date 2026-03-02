@@ -45,6 +45,7 @@ final class WatchAVPlayerController: PlayerCoordinating {
         let item = AVPlayerItem(asset: asset)
         player = AVPlayer(playerItem: item)
         player?.audiovisualBackgroundPlaybackPolicy = .continuesIfPossible
+        player?.automaticallyWaitsToMinimizeStalling = false
         setupObservers()
         player?.play()
         writeDebug("[WatchAVPlayer] player.play() called, rate=\(player?.rate ?? -1), timeControlStatus=\(player?.timeControlStatus.rawValue ?? -1)")
@@ -191,6 +192,11 @@ final class WatchAVPlayerController: PlayerCoordinating {
                     writeDebug("[WatchAVPlayer] readyToPlay, duration=\(duration)")
                     if duration.isFinite {
                         self?.onPropertyChange?(.duration, duration)
+                    }
+                    // Resume playback if player stalled waiting for data
+                    if self?.player?.rate == 0 {
+                        writeDebug("[WatchAVPlayer] resuming playback after readyToPlay")
+                        self?.player?.play()
                     }
                     self?.onMediaLoaded?()
                 case .failed:
