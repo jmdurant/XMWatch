@@ -2,6 +2,7 @@ import SwiftUI
 
 struct XMFavoritesView: View {
     @Environment(XMRadioService.self) private var radioService
+    @Binding var selectedTab: Int
 
     @State private var tuningChannelId: String?
 
@@ -83,8 +84,8 @@ struct XMFavoritesView: View {
 
     private func tuneChannel(_ channel: XMChannel) async {
         tuningChannelId = channel.id
-        radioService.currentChannel = channel
-        try? await Task.sleep(nanoseconds: 500_000_000)
+        await radioService.startPlayback(channel: channel)
         tuningChannelId = nil
+        selectedTab = 0  // Switch to Now Playing tab
     }
 }

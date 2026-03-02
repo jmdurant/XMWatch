@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct XMTabView: View {
-    @State private var selectedTab = 0
+    @Environment(XMRadioService.self) private var radioService
+    @State private var selectedTab = 1  // Start on Channels tab
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -11,12 +12,12 @@ struct XMTabView: View {
             .tag(0)
 
             NavigationStack {
-                XMChannelsView()
+                XMChannelsView(selectedTab: $selectedTab)
             }
             .tag(1)
 
             NavigationStack {
-                XMFavoritesView()
+                XMFavoritesView(selectedTab: $selectedTab)
             }
             .tag(2)
 

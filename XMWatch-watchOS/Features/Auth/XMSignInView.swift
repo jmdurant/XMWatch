@@ -3,57 +3,56 @@ import SwiftUI
 struct XMSignInView: View {
     @Environment(XMRadioService.self) private var radioService
 
-    @State private var username = ""
-    @State private var password = ""
     @State private var isSigningIn = false
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    Image(systemName: "radio")
-                        .font(.system(size: 40))
-                        .foregroundStyle(Color.accentColor)
+        ScrollView {
+            VStack(spacing: 12) {
+                Image(systemName: "radio")
+                    .font(.system(size: 40))
+                    .foregroundStyle(Color.accentColor)
 
-                    Text("XMWatch")
-                        .font(.title3)
-                        .fontWeight(.bold)
+                Text("XMWatch")
+                    .font(.title3)
+                    .fontWeight(.bold)
 
-                    TextField("Username", text: $username)
-                        .textContentType(.username)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-
-                    SecureField("Password", text: $password)
-                        .textContentType(.password)
-
-                    Button {
-                        Task { await signIn() }
-                    } label: {
-                        Label("Sign In", systemImage: "person.crop.circle")
-                    }
-                    .disabled(isSigningIn || username.isEmpty || password.isEmpty)
-
-                    if isSigningIn {
-                        ProgressView()
-                    }
-
-                    if let errorMessage = radioService.errorMessage {
-                        Text(errorMessage)
-                            .font(.caption2)
-                            .foregroundStyle(.red)
-                            .multilineTextAlignment(.center)
-                    }
+                Button {
+                    Task { await signIn() }
+                } label: {
+                    Label("Sign In", systemImage: "person.crop.circle")
                 }
-                .padding()
+                .disabled(isSigningIn)
+
+                if isSigningIn {
+                    ProgressView()
+                }
+
+                if let errorMessage = radioService.errorMessage {
+                    Text(errorMessage)
+                        .font(.caption2)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                }
+
+                // Live debug log
+                if !radioService.debugLog.isEmpty {
+                    Text(radioService.debugLog)
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundStyle(.green)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
-            .navigationTitle("Sign In")
+            .padding()
         }
     }
 
     private func signIn() async {
         isSigningIn = true
-        _ = await radioService.signIn(username: username, password: password)
+        _ = await radioService.signIn(
+            username: "jamesdurantjr2016@gmail.com",
+            password: "JMD2isme!"
+        )
         isSigningIn = false
     }
 }

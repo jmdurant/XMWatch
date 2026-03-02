@@ -2,12 +2,40 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleIdentifier</key>
+	<string>com.starplayrx.xmwatch.watchos</string>
+	<key>CFBundleExecutable</key>
+	<string>XMWatch-watchOS</string>
+	<key>CFBundleName</key>
+	<string>XMWatch</string>
+	<key>CFBundleDisplayName</key>
+	<string>XMWatch</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>WatchSimulator</string>
+	</array>
+	<key>DTPlatformName</key>
+	<string>watchsimulator</string>
+	<key>MinimumOSVersion</key>
+	<string>26.0</string>
+	<key>UIDeviceFamily</key>
+	<array>
+		<integer>4</integer>
+	</array>
+	<key>WKApplication</key>
+	<true/>
+	<key>WKCompanionAppBundleIdentifier</key>
+	<string>com.starplayrx.xmwatch</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
 	</array>
-	<key>WKApplication</key>
-	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

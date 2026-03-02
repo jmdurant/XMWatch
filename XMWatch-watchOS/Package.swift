@@ -16,7 +16,7 @@ let package = Package(
                 .product(name: "StarPlayrRadioKit", package: "StarPlayrRadioKit")
             ],
             path: ".",
-            exclude: ["Info.plist", "XMWatch-watchOS.entitlements", "Package.swift"]
+            exclude: ["Info.plist", "XMWatch-watchOS.entitlements", "Package.swift", "README.md"]
         )
     ]
 )
