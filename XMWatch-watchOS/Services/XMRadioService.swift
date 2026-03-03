@@ -3,7 +3,7 @@ import Foundation
 import os
 import StarPlayrRadioKit
 
-private let log = Logger(subsystem: "com.starplayrx.xmwatch.watchos", category: "RadioService")
+private let log = Logger(subsystem: "com.doctordurant.xmwatch.watchos", category: "RadioService")
 
 @MainActor @Observable
 final class XMRadioService {

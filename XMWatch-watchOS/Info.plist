@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleIdentifier</key>
-	<string>com.starplayrx.xmwatch.watchos</string>
+	<string>com.doctordurant.xmwatch.watchos</string>
 	<key>CFBundleExecutable</key>
 	<string>XMWatch-watchOS</string>
 	<key>CFBundleName</key>
@@ -11,17 +11,11 @@
 	<key>CFBundleDisplayName</key>
 	<string>XMWatch</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
-	<key>CFBundleSupportedPlatforms</key>
-	<array>
-		<string>WatchSimulator</string>
-	</array>
-	<key>DTPlatformName</key>
-	<string>watchsimulator</string>
 	<key>MinimumOSVersion</key>
 	<string>26.0</string>
 	<key>UIDeviceFamily</key>
@@ -31,7 +25,7 @@
 	<key>WKApplication</key>
 	<true/>
 	<key>WKCompanionAppBundleIdentifier</key>
-	<string>com.starplayrx.xmwatch</string>
+	<string>com.doctordurant.xmwatch</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
