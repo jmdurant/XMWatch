@@ -28,6 +28,7 @@ final class XMRadioService {
     private(set) var playerController: WatchAVPlayerController?
     private(set) var nowPlayingManager: WatchNowPlayingManager?
     private(set) var isPaused: Bool = true
+    private(set) var isBuffering: Bool = false
     private var proxyServer = XMHLSProxyServer.shared
     private var pdtTimer: Task<Void, Never>?
     private var tokenTimer: Task<Void, Never>?
@@ -487,6 +488,7 @@ final class XMRadioService {
 
     func startPlayback(channel: XMChannel) async {
         currentChannel = channel
+        isBuffering = true
 
         // Save as last played channel for resume-on-open
         UserDefaults.standard.set(channel.number, forKey: "xm_last_channel")
@@ -539,7 +541,14 @@ final class XMRadioService {
         controller.onPlaybackFailed = { [weak self] error in
             writeDebug("[RadioService] playback FAILED: \(error?.localizedDescription ?? "unknown")")
             Task { @MainActor in
+                self?.isBuffering = false
                 await self?.handlePlaybackInterruption()
+            }
+        }
+
+        controller.onMediaLoaded = { [weak self] in
+            Task { @MainActor in
+                self?.isBuffering = false
             }
         }
 

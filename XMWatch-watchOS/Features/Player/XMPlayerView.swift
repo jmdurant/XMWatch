@@ -24,15 +24,27 @@ struct XMPlayerView: View {
 
                     // Song title + Artist
                     VStack(spacing: 2) {
-                        Text(radioService.nowPlayingSong ?? channel.name)
-                            .font(.headline)
-                            .lineLimit(2)
-                            .multilineTextAlignment(.center)
+                        if radioService.isBuffering {
+                            ProgressView()
+                                .padding(.bottom, 2)
+                            Text(channel.name)
+                                .font(.headline)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.center)
+                            Text("Tuning Ch. \(channel.number)...")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text(radioService.nowPlayingSong ?? channel.name)
+                                .font(.headline)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.center)
 
-                        Text(radioService.nowPlayingArtist ?? "Ch. \(channel.number)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                            Text(radioService.nowPlayingArtist ?? "Ch. \(channel.number)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
                     }
 
                     // Controls
@@ -61,6 +73,8 @@ struct XMPlayerView: View {
                         }
                         .buttonStyle(.plain)
                     }
+                    .opacity(radioService.isBuffering ? 0.4 : 1.0)
+                    .disabled(radioService.isBuffering)
                 }
                 .padding()
             } else {
