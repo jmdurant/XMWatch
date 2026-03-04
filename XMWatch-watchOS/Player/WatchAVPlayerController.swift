@@ -3,6 +3,7 @@ import AVKit
 import MediaPlayer
 
 func writeDebug(_ msg: String) {
+    guard UserDefaults.standard.bool(forKey: "xm_debug_mode") else { return }
     let path = NSHomeDirectory() + "/tmp/xmwatch-debug.log"
     let line = "\(Date()): \(msg)\n"
     if let handle = FileHandle(forWritingAtPath: path) {

@@ -6,6 +6,7 @@ struct XMSettingsView: View {
 
     @State private var selectedRegion = appRegion
     @State private var resumeLastChannel = UserDefaults.standard.bool(forKey: "xm_resume_last_channel")
+    @State private var debugMode = UserDefaults.standard.bool(forKey: "xm_debug_mode")
 
     var body: some View {
         List {
@@ -26,6 +27,13 @@ struct XMSettingsView: View {
                         await radioService.configure(region: newValue)
                     }
                 }
+            }
+
+            Section("Debug") {
+                Toggle("Debug Mode", isOn: $debugMode)
+                    .onChange(of: debugMode) { _, newValue in
+                        UserDefaults.standard.set(newValue, forKey: "xm_debug_mode")
+                    }
             }
 
             Section("Account") {

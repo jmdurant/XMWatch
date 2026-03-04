@@ -6,6 +6,12 @@ struct XMWatchApp: App {
     @State private var radioService = XMRadioService()
     @Environment(\.scenePhase) private var scenePhase
 
+    init() {
+        UserDefaults.standard.register(defaults: [
+            "xm_resume_last_channel": true
+        ])
+    }
+
     var body: some Scene {
         WindowGroup {
             XMContentView()

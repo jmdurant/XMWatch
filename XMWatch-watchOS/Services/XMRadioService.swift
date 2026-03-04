@@ -55,6 +55,7 @@ final class XMRadioService {
 
     // MARK: - Debug helper
     private func dbg(_ msg: String) {
+        guard UserDefaults.standard.bool(forKey: "xm_debug_mode") else { return }
         debugLog += "\n" + msg
         log.info("\(msg)")
         writeDebug(msg)

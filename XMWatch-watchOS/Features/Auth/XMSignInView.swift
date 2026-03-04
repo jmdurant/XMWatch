@@ -8,9 +8,11 @@ struct XMSignInView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 12) {
-                Image(systemName: "radio")
-                    .font(.system(size: 40))
-                    .foregroundStyle(Color.accentColor)
+                Image("AppLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 80, height: 80)
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
 
                 Text("XMWatch")
                     .font(.title3)
@@ -34,8 +36,8 @@ struct XMSignInView: View {
                         .multilineTextAlignment(.center)
                 }
 
-                // Live debug log
-                if !radioService.debugLog.isEmpty {
+                if UserDefaults.standard.bool(forKey: "xm_debug_mode"),
+                   !radioService.debugLog.isEmpty {
                     Text(radioService.debugLog)
                         .font(.system(size: 9, design: .monospaced))
                         .foregroundStyle(.green)
