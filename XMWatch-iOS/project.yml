@@ -1,0 +1,37 @@
+name: XMWatch-iOS
+options:
+  bundleIdPrefix: com.doctordurant.xmwatch
+  deploymentTarget:
+    iOS: "26.0"
+  xcodeVersion: "26.0"
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: PHS5V2FW3J
+    TARGETED_DEVICE_FAMILY: "1,2"
+    SWIFT_VERSION: "5.9"
+    GENERATE_INFOPLIST_FILE: false
+    INFOPLIST_FILE: Info.plist
+    CODE_SIGN_ENTITLEMENTS: XMWatch-iOS.entitlements
+
+packages:
+  StarPlayrRadioKit:
+    path: ../StarPlayrRadioKit
+
+targets:
+  XMWatch-iOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: .
+        excludes:
+          - project.yml
+          - "*.xcodeproj"
+          - ".build"
+          - ".swiftpm"
+    dependencies:
+      - package: StarPlayrRadioKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.doctordurant.xmwatch.ios
+        PRODUCT_NAME: XMWatch

@@ -1,0 +1,496 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0189A7E02097BFA2C6A1CB73 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 531FC33F8C4C7B8640D004C8 /* MainTabView.swift */; };
+		05843D3C81B60F03FA22D650 /* XMChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B76A55FF54307BAB3A5521F /* XMChannel.swift */; };
+		1791C59534EF0094F12E96F0 /* AVPlayerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0841CECD306BBD3D62A113F0 /* AVPlayerController.swift */; };
+		1FCA421824C931733E9E6BDB /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6F82409F5398B70BB452B3 /* PlayerView.swift */; };
+		3191F956649A85102DEB8812 /* PlayerProperty.swift in Sources */ = {isa = PBXBuildFile; fileRef = E47B96F495FE339AE995AFDB /* PlayerProperty.swift */; };
+		3B69999FEB40343F98121CD5 /* PlayerTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E209FE1CE16C99896EDDEF5 /* PlayerTrack.swift */; };
+		46486D7F9946204A44C52834 /* StarPlayrRadioKit in Frameworks */ = {isa = PBXBuildFile; productRef = FCF41B1A3E9E2084C687F5E5 /* StarPlayrRadioKit */; };
+		761ECFE0CEECF085C30ACDA6 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46E8425F0689FE3B87D56EA5 /* SignInView.swift */; };
+		9505E35CB199210FD1E113B8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3372D6160BB916AD20710233 /* ContentView.swift */; };
+		A79C7DD826CB72F70069661A /* PlayerOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82FEA032405FD192C3CF7C69 /* PlayerOptions.swift */; };
+		A96C79DC8253702B2F947A36 /* NowPlayingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA419ED4F33E5DFBB927E655 /* NowPlayingManager.swift */; };
+		AD9C6E50854C417F9666F234 /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F674904C009DE993D63BCD9B /* FavoritesView.swift */; };
+		B236262088F69AC254BD865F /* XMHLSProxyServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF60143A346AB00FD432786F /* XMHLSProxyServer.swift */; };
+		B9397062C120AB2B788FF058 /* PlayerCoordinating.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DF1CAD82D9D7694C52C7E3B /* PlayerCoordinating.swift */; };
+		D968CA71820A0E7AA6F0EFCD /* ChannelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79096C73FD534A245819E72C /* ChannelsView.swift */; };
+		DB6925EADB587EAD1103C3A7 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4B5C460025B0B02A2D0CE1C /* SettingsView.swift */; };
+		DE142BB36E2F9690F7DFB1A7 /* XMWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A838E638336C2C6DF3E82D48 /* XMWatchApp.swift */; };
+		DEF48DE03940488C745DA7F6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1917776153125FB22BC88377 /* Assets.xcassets */; };
+		E5CB9ABAAF58CF614CAD8032 /* XMRadioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12E41F91D898D83592C7CA3 /* XMRadioService.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0841CECD306BBD3D62A113F0 /* AVPlayerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVPlayerController.swift; sourceTree = "<group>"; };
+		1917776153125FB22BC88377 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1B76A55FF54307BAB3A5521F /* XMChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMChannel.swift; sourceTree = "<group>"; };
+		3372D6160BB916AD20710233 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		46E8425F0689FE3B87D56EA5 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
+		531FC33F8C4C7B8640D004C8 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		6DF1CAD82D9D7694C52C7E3B /* PlayerCoordinating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerCoordinating.swift; sourceTree = "<group>"; };
+		79096C73FD534A245819E72C /* ChannelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelsView.swift; sourceTree = "<group>"; };
+		82FEA032405FD192C3CF7C69 /* PlayerOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerOptions.swift; sourceTree = "<group>"; };
+		8DE48114602521A9EC77DBE5 /* StarPlayrRadioKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = StarPlayrRadioKit; path = ../StarPlayrRadioKit; sourceTree = SOURCE_ROOT; };
+		8E209FE1CE16C99896EDDEF5 /* PlayerTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerTrack.swift; sourceTree = "<group>"; };
+		9C90CFF1E8A0A8BDCF7E6210 /* XMWatch-iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "XMWatch-iOS.entitlements"; sourceTree = "<group>"; };
+		A12E41F91D898D83592C7CA3 /* XMRadioService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMRadioService.swift; sourceTree = "<group>"; };
+		A838E638336C2C6DF3E82D48 /* XMWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMWatchApp.swift; sourceTree = "<group>"; };
+		B4B5C460025B0B02A2D0CE1C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		CE6F82409F5398B70BB452B3 /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
+		CF60143A346AB00FD432786F /* XMHLSProxyServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMHLSProxyServer.swift; sourceTree = "<group>"; };
+		E47B96F495FE339AE995AFDB /* PlayerProperty.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerProperty.swift; sourceTree = "<group>"; };
+		EA419ED4F33E5DFBB927E655 /* NowPlayingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingManager.swift; sourceTree = "<group>"; };
+		F674904C009DE993D63BCD9B /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
+		FD4AD3527EB1F9A815CA587F /* XMWatch-iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "XMWatch-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		FF4A633D254641D0BA73096D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		092304E219EA834BE587F864 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				46486D7F9946204A44C52834 /* StarPlayrRadioKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		14B7457032389F17B039E3FC /* Channels */ = {
+			isa = PBXGroup;
+			children = (
+				79096C73FD534A245819E72C /* ChannelsView.swift */,
+			);
+			path = Channels;
+			sourceTree = "<group>";
+		};
+		17E2C2170047001E87FBAC00 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				46E8425F0689FE3B87D56EA5 /* SignInView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		1E2C7A9B14427193D938BC44 /* XMWatch-iOS */ = {
+			isa = PBXGroup;
+			children = (
+				1917776153125FB22BC88377 /* Assets.xcassets */,
+				FF4A633D254641D0BA73096D /* Info.plist */,
+				9C90CFF1E8A0A8BDCF7E6210 /* XMWatch-iOS.entitlements */,
+				A838E638336C2C6DF3E82D48 /* XMWatchApp.swift */,
+				998051F0AD758C2DEC936192 /* Features */,
+				66BAD0B106C1F174DDA27E85 /* Models */,
+				B4A5A7BA0D93B300840F5810 /* Player */,
+				715B5FA2B52FBB61645BB77A /* Services */,
+			);
+			name = "XMWatch-iOS";
+			path = .;
+			sourceTree = "<group>";
+		};
+		49A824E1B9D1E73380A7570A /* Favorites */ = {
+			isa = PBXGroup;
+			children = (
+				F674904C009DE993D63BCD9B /* FavoritesView.swift */,
+			);
+			path = Favorites;
+			sourceTree = "<group>";
+		};
+		66BAD0B106C1F174DDA27E85 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				1B76A55FF54307BAB3A5521F /* XMChannel.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		715B5FA2B52FBB61645BB77A /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				CF60143A346AB00FD432786F /* XMHLSProxyServer.swift */,
+				A12E41F91D898D83592C7CA3 /* XMRadioService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		926E0BDD34616D41AFA14119 = {
+			isa = PBXGroup;
+			children = (
+				998051F0AD758C2DEC936192 /* Features */,
+				66BAD0B106C1F174DDA27E85 /* Models */,
+				9DDDA2FDECDD1BCD9F46DC63 /* Packages */,
+				B4A5A7BA0D93B300840F5810 /* Player */,
+				715B5FA2B52FBB61645BB77A /* Services */,
+				1E2C7A9B14427193D938BC44 /* XMWatch-iOS */,
+				AE03A43D484A11666461398A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		998051F0AD758C2DEC936192 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				3372D6160BB916AD20710233 /* ContentView.swift */,
+				531FC33F8C4C7B8640D004C8 /* MainTabView.swift */,
+				17E2C2170047001E87FBAC00 /* Auth */,
+				14B7457032389F17B039E3FC /* Channels */,
+				49A824E1B9D1E73380A7570A /* Favorites */,
+				F4A2BE54780B05458728CAC6 /* Player */,
+				D9660C3DC8DE38827721237F /* Settings */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		9DDDA2FDECDD1BCD9F46DC63 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				8DE48114602521A9EC77DBE5 /* StarPlayrRadioKit */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		AE03A43D484A11666461398A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FD4AD3527EB1F9A815CA587F /* XMWatch-iOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B4A5A7BA0D93B300840F5810 /* Player */ = {
+			isa = PBXGroup;
+			children = (
+				0841CECD306BBD3D62A113F0 /* AVPlayerController.swift */,
+				EA419ED4F33E5DFBB927E655 /* NowPlayingManager.swift */,
+				6DF1CAD82D9D7694C52C7E3B /* PlayerCoordinating.swift */,
+				82FEA032405FD192C3CF7C69 /* PlayerOptions.swift */,
+				E47B96F495FE339AE995AFDB /* PlayerProperty.swift */,
+				8E209FE1CE16C99896EDDEF5 /* PlayerTrack.swift */,
+			);
+			path = Player;
+			sourceTree = "<group>";
+		};
+		D9660C3DC8DE38827721237F /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				B4B5C460025B0B02A2D0CE1C /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		F4A2BE54780B05458728CAC6 /* Player */ = {
+			isa = PBXGroup;
+			children = (
+				CE6F82409F5398B70BB452B3 /* PlayerView.swift */,
+			);
+			path = Player;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		ABC1D5995CA669762A9CDDB2 /* XMWatch-iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B425C21E21DF1D767067795D /* Build configuration list for PBXNativeTarget "XMWatch-iOS" */;
+			buildPhases = (
+				AEEA623E475B725A88827AAD /* Sources */,
+				011CB4E6640E3D8AD0F2FD4F /* Resources */,
+				092304E219EA834BE587F864 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "XMWatch-iOS";
+			packageProductDependencies = (
+				FCF41B1A3E9E2084C687F5E5 /* StarPlayrRadioKit */,
+			);
+			productName = "XMWatch-iOS";
+			productReference = FD4AD3527EB1F9A815CA587F /* XMWatch-iOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E555A98F36B12168AB54F00C /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					ABC1D5995CA669762A9CDDB2 = {
+						DevelopmentTeam = PHS5V2FW3J;
+					};
+				};
+			};
+			buildConfigurationList = A84BD181DC18B833E2133718 /* Build configuration list for PBXProject "XMWatch-iOS" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 926E0BDD34616D41AFA14119;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				320E7BF90E518C3BDE1883AC /* XCLocalSwiftPackageReference "../StarPlayrRadioKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				ABC1D5995CA669762A9CDDB2 /* XMWatch-iOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		011CB4E6640E3D8AD0F2FD4F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DEF48DE03940488C745DA7F6 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AEEA623E475B725A88827AAD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1791C59534EF0094F12E96F0 /* AVPlayerController.swift in Sources */,
+				D968CA71820A0E7AA6F0EFCD /* ChannelsView.swift in Sources */,
+				9505E35CB199210FD1E113B8 /* ContentView.swift in Sources */,
+				AD9C6E50854C417F9666F234 /* FavoritesView.swift in Sources */,
+				0189A7E02097BFA2C6A1CB73 /* MainTabView.swift in Sources */,
+				A96C79DC8253702B2F947A36 /* NowPlayingManager.swift in Sources */,
+				B9397062C120AB2B788FF058 /* PlayerCoordinating.swift in Sources */,
+				A79C7DD826CB72F70069661A /* PlayerOptions.swift in Sources */,
+				3191F956649A85102DEB8812 /* PlayerProperty.swift in Sources */,
+				3B69999FEB40343F98121CD5 /* PlayerTrack.swift in Sources */,
+				1FCA421824C931733E9E6BDB /* PlayerView.swift in Sources */,
+				DB6925EADB587EAD1103C3A7 /* SettingsView.swift in Sources */,
+				761ECFE0CEECF085C30ACDA6 /* SignInView.swift in Sources */,
+				05843D3C81B60F03FA22D650 /* XMChannel.swift in Sources */,
+				B236262088F69AC254BD865F /* XMHLSProxyServer.swift in Sources */,
+				E5CB9ABAAF58CF614CAD8032 /* XMRadioService.swift in Sources */,
+				DE142BB36E2F9690F7DFB1A7 /* XMWatchApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		00613CEFA6C6A9E528A49794 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = "XMWatch-iOS.entitlements";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = PHS5V2FW3J;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		24CA9FF6D76A506F67F61846 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.doctordurant.xmwatch.ios;
+				PRODUCT_NAME = XMWatch;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D2298CCDF6BFC3AB4961E3EF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = "XMWatch-iOS.entitlements";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = PHS5V2FW3J;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		FF86D54352AA07E926E9C8E3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.doctordurant.xmwatch.ios;
+				PRODUCT_NAME = XMWatch;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A84BD181DC18B833E2133718 /* Build configuration list for PBXProject "XMWatch-iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				00613CEFA6C6A9E528A49794 /* Debug */,
+				D2298CCDF6BFC3AB4961E3EF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B425C21E21DF1D767067795D /* Build configuration list for PBXNativeTarget "XMWatch-iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				24CA9FF6D76A506F67F61846 /* Debug */,
+				FF86D54352AA07E926E9C8E3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		320E7BF90E518C3BDE1883AC /* XCLocalSwiftPackageReference "../StarPlayrRadioKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../StarPlayrRadioKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		FCF41B1A3E9E2084C687F5E5 /* StarPlayrRadioKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = StarPlayrRadioKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = E555A98F36B12168AB54F00C /* Project object */;
+}
