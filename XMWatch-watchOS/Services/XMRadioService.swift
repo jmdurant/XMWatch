@@ -571,11 +571,13 @@ final class XMRadioService {
         retryCount = 0  // Reset on successful play attempt
 
         // Set metadata AFTER play so audio session is active and system registers us as Now Playing app
+        let artURL = (nowPlayingArtURL ?? channel.largeImageURL).isEmpty
+            ? nil : URL(string: nowPlayingArtURL ?? channel.largeImageURL)
         manager.updateMetadata(
             title: nowPlayingSong ?? channel.name,
             artist: nowPlayingArtist ?? "",
             channel: "\(channel.name) - Ch. \(channel.number)",
-            artworkURL: nowPlayingArtURL.flatMap { URL(string: $0) }
+            artworkURL: artURL
         )
         manager.updatePlaybackState(rate: 1.0)
 
@@ -621,11 +623,13 @@ final class XMRadioService {
 
                 // Update lock screen now playing info
                 if let channel = currentChannel {
+                    let artURLString = nowPlayingArtURL ?? channel.largeImageURL
+                    let artURL = artURLString.isEmpty ? nil : URL(string: artURLString)
                     nowPlayingManager?.updateMetadata(
                         title: nowPlayingSong ?? channel.name,
                         artist: nowPlayingArtist ?? "",
                         channel: "\(channel.name) - Ch. \(channel.number)",
-                        artworkURL: nowPlayingArtURL.flatMap { URL(string: $0) }
+                        artworkURL: artURL
                     )
                 }
             }

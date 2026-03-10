@@ -423,7 +423,8 @@ final class XMRadioService {
                     artURL = image
                 }
 
-                dbg("[NPL] result: \(artist ?? "nil") - \(song ?? "nil") (type: \(marker.cut?.cutContentType?.rawValue ?? "nil"))")
+                let prevArtURL = self.nowPlayingArtURL
+                dbg("[NPL] result: \(artist ?? "nil") - \(song ?? "nil") art=\(artURL?.prefix(60) ?? "nil") prev=\(prevArtURL?.prefix(60) ?? "nil") (type: \(marker.cut?.cutContentType?.rawValue ?? "nil"))")
 
                 self.nowPlayingArtist = artist
                 self.nowPlayingSong = song
@@ -603,8 +604,9 @@ final class XMRadioService {
                 await updateNowPlaying()
 
                 if let channel = currentChannel {
-                    let artURL = (nowPlayingArtURL ?? channel.largeImageURL).isEmpty
-                        ? nil : URL(string: nowPlayingArtURL ?? channel.largeImageURL)
+                    let artURLString = nowPlayingArtURL ?? channel.largeImageURL
+                    let artURL = artURLString.isEmpty ? nil : URL(string: artURLString)
+                    dbg("[NP-update] artSource=\(nowPlayingArtURL != nil ? "albumArt" : "channelLogo") url=\(artURLString.prefix(80))")
                     nowPlayingManager?.updateMetadata(
                         title: nowPlayingSong ?? channel.name,
                         artist: nowPlayingArtist ?? "",

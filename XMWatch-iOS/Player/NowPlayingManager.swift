@@ -10,6 +10,7 @@ final class NowPlayingManager {
 
     var onNextChannel: (() -> Void)?
     var onPreviousChannel: (() -> Void)?
+    private var lastArtworkURL: URL?
 
     init(coordinator: any PlayerCoordinating) {
         self.coordinator = coordinator
@@ -80,7 +81,8 @@ final class NowPlayingManager {
 
         infoCenter.nowPlayingInfo = info
 
-        if let artworkURL {
+        if let artworkURL, artworkURL != lastArtworkURL {
+            lastArtworkURL = artworkURL
             loadArtwork(from: artworkURL)
         }
     }

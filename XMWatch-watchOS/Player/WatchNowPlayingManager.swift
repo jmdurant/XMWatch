@@ -10,6 +10,7 @@ final class WatchNowPlayingManager {
 
     var onNextChannel: (() -> Void)?
     var onPreviousChannel: (() -> Void)?
+    private var lastArtworkURL: URL?
 
     init(coordinator: any PlayerCoordinating) {
         self.coordinator = coordinator
@@ -80,7 +81,8 @@ final class WatchNowPlayingManager {
 
         infoCenter.nowPlayingInfo = info
 
-        if let artworkURL {
+        if let artworkURL, artworkURL != lastArtworkURL {
+            lastArtworkURL = artworkURL
             loadArtwork(from: artworkURL)
         }
     }
@@ -88,9 +90,18 @@ final class WatchNowPlayingManager {
     private func loadArtwork(from url: URL) {
         Task {
             guard let (data, _) = try? await URLSession.shared.data(from: url),
-                  let image = UIImage(data: data) else {
+                  let original = UIImage(data: data) else {
                 return
             }
+
+            // Composite onto a dark background so white/transparent logos are visible
+            let size = original.size
+            UIGraphicsBeginImageContextWithOptions(size, true, original.scale)
+            UIColor(white: 0.15, alpha: 1).setFill()
+            UIRectFill(CGRect(origin: .zero, size: size))
+            original.draw(in: CGRect(origin: .zero, size: size))
+            let image = UIGraphicsGetImageFromCurrentImageContext() ?? original
+            UIGraphicsEndImageContext()
 
             let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
             var info = self.infoCenter.nowPlayingInfo ?? [:]
