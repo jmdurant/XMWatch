@@ -7,7 +7,7 @@ options:
 
 settings:
   base:
-    DEVELOPMENT_TEAM: PHS5V2FW3J
+    DEVELOPMENT_TEAM: ADVQS8RXPZ
     TARGETED_DEVICE_FAMILY: "1,2"
     SWIFT_VERSION: "5.9"
     GENERATE_INFOPLIST_FILE: false
@@ -33,5 +33,5 @@ targets:
       - package: StarPlayrRadioKit
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.doctordurant.xmwatch.ios
+        PRODUCT_BUNDLE_IDENTIFIER: com.doctordurant.xmwatch
         PRODUCT_NAME: XMWatch

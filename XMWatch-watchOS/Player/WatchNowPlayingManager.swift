@@ -8,6 +8,7 @@ final class WatchNowPlayingManager {
     private let commandCenter = MPRemoteCommandCenter.shared()
     private let infoCenter = MPNowPlayingInfoCenter.default()
 
+    var onTogglePlayback: (() -> Void)?
     var onNextChannel: (() -> Void)?
     var onPreviousChannel: (() -> Void)?
     private var lastArtworkURL: URL?
@@ -22,7 +23,7 @@ final class WatchNowPlayingManager {
     private func setupRemoteCommands() {
         commandCenter.playCommand.isEnabled = true
         commandCenter.playCommand.addTarget { [weak self] _ in
-            Task { @MainActor in self?.coordinator?.resume() }
+            Task { @MainActor in self?.onTogglePlayback?() }
             return .success
         }
 
@@ -34,7 +35,7 @@ final class WatchNowPlayingManager {
 
         commandCenter.togglePlayPauseCommand.isEnabled = true
         commandCenter.togglePlayPauseCommand.addTarget { [weak self] _ in
-            Task { @MainActor in self?.coordinator?.togglePlayback() }
+            Task { @MainActor in self?.onTogglePlayback?() }
             return .success
         }
 

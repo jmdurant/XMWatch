@@ -17,6 +17,7 @@
 		57ECE7A9958E12D3C10AE491 /* XMRadioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE6E48A55B460752F34ACBF7 /* XMRadioService.swift */; };
 		66A1CF7954FCA6DF30510D66 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2582CB747AC20E7BC3FE824F /* Assets.xcassets */; };
 		6BA377B3E6B78FDA89090239 /* XMHLSProxyServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63977740CD3B165467131560 /* XMHLSProxyServer.swift */; };
+		801C5AD057DC50DCD3114FB1 /* XMWatch-watchOS.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 7D31EBF01F482B6D7ABDBC20 /* XMWatch-watchOS.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		88BB20E7D4079DC978CCAED4 /* WatchAVPlayerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECD393A110D458707D2ABACA /* WatchAVPlayerController.swift */; };
 		96FC44D0364A86E8B170F4A8 /* XMWatchWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 432C2F739E1A6B6AE5F5531E /* XMWatchWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A47BF7326A7EFE996630D9C1 /* PlayerOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15AB093C6DAF7858E511F20B /* PlayerOptions.swift */; };
@@ -27,11 +28,20 @@
 		BB5F16976D680155A00A9B69 /* XMWatchWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BDEC5046DDA4A7785262BFA /* XMWatchWidget.swift */; };
 		C83F2299F7CA03E9FFE6764A /* XMWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEFDB2C118FDA81EA053FB6D /* XMWatchApp.swift */; };
 		D09D4B4E73EA6F19407311C1 /* WatchNowPlayingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42031B4F3EBDCAB17B5F35F0 /* WatchNowPlayingManager.swift */; };
+		E08578B06C08227AB897EC92 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 50FE040D5ED47DA1EC07E0C6 /* Assets.xcassets */; };
 		E8B3AE4E1D2176AD7830A371 /* XMSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F70694EEA6AD961E985866 /* XMSettingsView.swift */; };
 		FADBE8E05A378DA8C6D024AC /* PlayerTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97F0752A04FD3CA7E636C1E /* PlayerTrack.swift */; };
+		FE945F83D6B491FDFF88C684 /* StubApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA14F22E9200CCBA01B68F0 /* StubApp.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		798170340912A187C47FF5DC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 25A89F511F640F8FEE6BD7E7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3F67D1D12FB19695584C481B;
+			remoteInfo = "XMWatch-watchOS";
+		};
 		8D97863E0912BB39457767A9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 25A89F511F640F8FEE6BD7E7 /* Project object */;
@@ -42,6 +52,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		0808DD88C591AC0F038949C6 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				801C5AD057DC50DCD3114FB1 /* XMWatch-watchOS.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2CBD87F9099DBBEC33784AE2 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -63,9 +84,12 @@
 		277712E305A02116433A5784 /* XMChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMChannel.swift; sourceTree = "<group>"; };
 		42031B4F3EBDCAB17B5F35F0 /* WatchNowPlayingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchNowPlayingManager.swift; sourceTree = "<group>"; };
 		432C2F739E1A6B6AE5F5531E /* XMWatchWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = XMWatchWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		4FA14F22E9200CCBA01B68F0 /* StubApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StubApp.swift; sourceTree = "<group>"; };
+		50FE040D5ED47DA1EC07E0C6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		593DB5E59FD9F91F75CD5A12 /* XMFavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMFavoritesView.swift; sourceTree = "<group>"; };
 		5B423ADA93AD73FDB0CCA42C /* XMTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMTabView.swift; sourceTree = "<group>"; };
 		63977740CD3B165467131560 /* XMHLSProxyServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMHLSProxyServer.swift; sourceTree = "<group>"; };
+		6D3A7A45172B08CC404C74B7 /* XMWatch-Stub.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "XMWatch-Stub.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B9BD15F3A4BE0AB0BFA657F /* PlayerProperty.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerProperty.swift; sourceTree = "<group>"; };
 		7BDEC5046DDA4A7785262BFA /* XMWatchWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMWatchWidget.swift; sourceTree = "<group>"; };
 		7D31EBF01F482B6D7ABDBC20 /* XMWatch-watchOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "XMWatch-watchOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -98,10 +122,20 @@
 		1D7FD695A65C24B4FD597028 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				6D3A7A45172B08CC404C74B7 /* XMWatch-Stub.app */,
 				7D31EBF01F482B6D7ABDBC20 /* XMWatch-watchOS.app */,
 				432C2F739E1A6B6AE5F5531E /* XMWatchWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		44244041627B9BF53813D3FA /* Stub */ = {
+			isa = PBXGroup;
+			children = (
+				50FE040D5ED47DA1EC07E0C6 /* Assets.xcassets */,
+				4FA14F22E9200CCBA01B68F0 /* StubApp.swift */,
+			);
+			path = Stub;
 			sourceTree = "<group>";
 		};
 		4ADD666E595542EFA04F492C /* Favorites */ = {
@@ -122,6 +156,7 @@
 				F5E26A658EDFA8203D2C354F /* Packages */,
 				813799D5CD14499DB6AA0D75 /* Player */,
 				89667A7E9C43C69104532B52 /* Services */,
+				44244041627B9BF53813D3FA /* Stub */,
 				670A5EDC378C397176249279 /* XMWatchWidget */,
 				1D7FD695A65C24B4FD597028 /* Products */,
 			);
@@ -247,6 +282,26 @@
 			productReference = 7D31EBF01F482B6D7ABDBC20 /* XMWatch-watchOS.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A4486A59CFECB29DF33619D2 /* XMWatch-Stub */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5D2D53AAD4E82E54C74BE520 /* Build configuration list for PBXNativeTarget "XMWatch-Stub" */;
+			buildPhases = (
+				2A56CFC8CD4CD272A92274FB /* Sources */,
+				96B2D610DEA9C4D5A284BD66 /* Resources */,
+				0808DD88C591AC0F038949C6 /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3EBD82AC92DDA6B482A31E5C /* PBXTargetDependency */,
+			);
+			name = "XMWatch-Stub";
+			packageProductDependencies = (
+			);
+			productName = "XMWatch-Stub";
+			productReference = 6D3A7A45172B08CC404C74B7 /* XMWatch-Stub.app */;
+			productType = "com.apple.product-type.application";
+		};
 		E7BD0EC39E50EF7A97A1B6CB /* XMWatchWidgetExtension */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A384613B8FD8D27EFE353ED1 /* Build configuration list for PBXNativeTarget "XMWatchWidgetExtension" */;
@@ -275,11 +330,15 @@
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					3F67D1D12FB19695584C481B = {
-						DevelopmentTeam = PHS5V2FW3J;
+						DevelopmentTeam = ADVQS8RXPZ;
+						ProvisioningStyle = Automatic;
+					};
+					A4486A59CFECB29DF33619D2 = {
+						DevelopmentTeam = ADVQS8RXPZ;
 						ProvisioningStyle = Automatic;
 					};
 					E7BD0EC39E50EF7A97A1B6CB = {
-						DevelopmentTeam = PHS5V2FW3J;
+						DevelopmentTeam = ADVQS8RXPZ;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -301,6 +360,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				A4486A59CFECB29DF33619D2 /* XMWatch-Stub */,
 				3F67D1D12FB19695584C481B /* XMWatch-watchOS */,
 				E7BD0EC39E50EF7A97A1B6CB /* XMWatchWidgetExtension */,
 			);
@@ -324,6 +384,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		96B2D610DEA9C4D5A284BD66 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E08578B06C08227AB897EC92 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -332,6 +400,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				BB5F16976D680155A00A9B69 /* XMWatchWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2A56CFC8CD4CD272A92274FB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FE945F83D6B491FDFF88C684 /* StubApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -362,6 +438,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		3EBD82AC92DDA6B482A31E5C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3F67D1D12FB19695584C481B /* XMWatch-watchOS */;
+			targetProxy = 798170340912A187C47FF5DC /* PBXContainerItemProxy */;
+		};
 		AF4B6E23EC8969AF6DC6EB88 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E7BD0EC39E50EF7A97A1B6CB /* XMWatchWidgetExtension */;
@@ -370,13 +451,39 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		1EFDF304261D83FB3BB58413 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = ADVQS8RXPZ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.doctordurant.xmwatch;
+				PRODUCT_NAME = XMWatch;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 		30CA72E723944C8B1A88CFF9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = XMWatchWidget/XMWatchWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = PHS5V2FW3J;
+				DEVELOPMENT_TEAM = ADVQS8RXPZ;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = XMWatchWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
@@ -391,6 +498,34 @@
 			};
 			name = Debug;
 		};
+		4DC91D6BA4B23B0EFC5ECAE5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = ADVQS8RXPZ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.doctordurant.xmwatch;
+				PRODUCT_NAME = XMWatch;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		761A9525D99391998E68320F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -398,7 +533,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = PHS5V2FW3J;
+				DEVELOPMENT_TEAM = ADVQS8RXPZ;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = XMWatchWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
@@ -422,16 +557,16 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "XMWatch-watchOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = PHS5V2FW3J;
+				DEVELOPMENT_TEAM = ADVQS8RXPZ;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Info.plist;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.doctordurant.xmwatch.watchos;
 				PRODUCT_NAME = "XMWatch-watchOS";
 				SDKROOT = watchos;
-				SKIP_INSTALL = NO;
+				SKIP_INSTALL = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.9;
@@ -447,15 +582,15 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "XMWatch-watchOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = PHS5V2FW3J;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = ADVQS8RXPZ;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Info.plist;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.doctordurant.xmwatch.watchos;
 				PRODUCT_NAME = "XMWatch-watchOS";
 				SDKROOT = watchos;
-				SKIP_INSTALL = NO;
+				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = 4;
 				WATCHOS_DEPLOYMENT_TARGET = 26.0;
@@ -507,10 +642,10 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = watchos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
@@ -569,11 +704,11 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = watchos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -584,6 +719,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		5D2D53AAD4E82E54C74BE520 /* Build configuration list for PBXNativeTarget "XMWatch-Stub" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1EFDF304261D83FB3BB58413 /* Debug */,
+				4DC91D6BA4B23B0EFC5ECAE5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		9DF770488E2A3F2067B2F7C8 /* Build configuration list for PBXNativeTarget "XMWatch-watchOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -543,6 +543,9 @@ final class XMRadioService {
         let manager = NowPlayingManager(coordinator: controller)
         nowPlayingManager = manager
 
+        manager.onTogglePlayback = { [weak self] in
+            self?.togglePlayback()
+        }
         manager.onNextChannel = { [weak self] in
             Task { @MainActor in await self?.nextChannel() }
         }
@@ -577,7 +580,16 @@ final class XMRadioService {
     }
 
     func togglePlayback() {
-        playerController?.togglePlayback()
+        guard let controller = playerController else { return }
+        if controller.player?.rate == 0 {
+            // For live streams, if paused the segments may have expired.
+            // Restart from the live edge instead of trying to resume.
+            if let channel = currentChannel {
+                Task { await startPlayback(channel: channel) }
+            }
+        } else {
+            controller.pause()
+        }
     }
 
     func nextChannel() async {
