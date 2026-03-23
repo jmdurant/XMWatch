@@ -4,7 +4,7 @@
       "command": "bash",
       "args": ["-c", "set -a && source $HOME/.env && source ./.env 2>/dev/null && exec node $HOME/asc-mcp-server/dist/index.js"]
     },
-    "google-play": {
+    "gplay": {
       "command": "bash",
       "args": ["-c", "set -a && source $HOME/.env && source ./.env 2>/dev/null && exec node $HOME/gplay-mcp-server/dist/index.js"]
     },
