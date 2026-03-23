@@ -1,16 +1,29 @@
 {
   "mcpServers": {
     "app-store-connect": {
-      "command": "bash",
-      "args": ["-c", "set -a && source $HOME/.env && source ./.env 2>/dev/null && exec node $HOME/asc-mcp-server/dist/index.js"]
+      "command": "node",
+      "args": ["/Users/jamesdurant/asc-mcp-server/dist/index.js"],
+      "env": {
+        "ASC_KEY_ID": "${ASC_KEY_ID}",
+        "ASC_ISSUER_ID": "${ASC_ISSUER_ID}",
+        "ASC_KEY_PATH": "${ASC_KEY_PATH:-/Users/jamesdurant/.appstoreconnect/private_keys/AuthKey.p8}",
+        "ASC_CONTACT_PHONE": "${ASC_CONTACT_PHONE}"
+      }
     },
     "gplay": {
-      "command": "bash",
-      "args": ["-c", "set -a && source $HOME/.env && source ./.env 2>/dev/null && exec node $HOME/gplay-mcp-server/dist/index.js"]
+      "command": "node",
+      "args": ["/Users/jamesdurant/gplay-mcp-server/dist/index.js"],
+      "env": {
+        "GPLAY_SERVICE_ACCOUNT_KEY": "${GPLAY_SERVICE_ACCOUNT_KEY:-/Users/jamesdurant/.config/gplay/service-account.json}"
+      }
     },
     "amazon-appstore": {
-      "command": "bash",
-      "args": ["-c", "set -a && source $HOME/.env && source ./.env 2>/dev/null && exec node $HOME/amazon-mcp-server/dist/index.js"]
+      "command": "node",
+      "args": ["/Users/jamesdurant/amazon-mcp-server/dist/index.js"],
+      "env": {
+        "AMAZON_CLIENT_ID": "${AMAZON_CLIENT_ID}",
+        "AMAZON_CLIENT_SECRET": "${AMAZON_CLIENT_SECRET}"
+      }
     }
   }
 }
