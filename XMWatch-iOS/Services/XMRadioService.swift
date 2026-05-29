@@ -625,9 +625,7 @@ final class XMRadioService {
         pdtTimer?.cancel()
         pdtTimer = Task {
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 12_000_000_000)
-                guard !Task.isCancelled else { break }
-
+                // Fetch immediately on first pass, then every 12s.
                 await updateNowPlaying()
 
                 if let channel = currentChannel {
@@ -641,6 +639,8 @@ final class XMRadioService {
                         artworkURL: artURL
                     )
                 }
+
+                try? await Task.sleep(nanoseconds: 12_000_000_000)
             }
         }
     }
