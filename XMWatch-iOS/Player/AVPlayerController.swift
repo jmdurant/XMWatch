@@ -22,10 +22,20 @@ final class AVPlayerController: PlayerCoordinating {
     private var statusObservation: NSKeyValueObservation?
     private var rateObservation: NSKeyValueObservation?
     private var durationObservation: NSKeyValueObservation?
+    private var bufferEmptyObservation: NSKeyValueObservation?
+    private var likelyToKeepUpObservation: NSKeyValueObservation?
+    private var notificationTokens: [NSObjectProtocol] = []
+    private var stallEscalationTask: Task<Void, Never>?
+    /// Seconds a stall must persist (with no self-recovery) before we escalate to a full reconnect.
+    private let stallGracePeriod: UInt64 = 8
     var onPropertyChange: ((PlayerProperty, Any?) -> Void)?
     var onPlaybackEnded: (() -> Void)?
     var onPlaybackFailed: ((Error?) -> Void)?
     var onMediaLoaded: (() -> Void)?
+    /// Fired when playback stalls (buffer underrun / network drop) and does not
+    /// self-recover within `stallGracePeriod`. The service treats this like a
+    /// failure and re-establishes the session.
+    var onPlaybackStalled: (() -> Void)?
 
     init(options: PlayerOptions) {}
 
@@ -169,6 +179,28 @@ final class AVPlayerController: PlayerCoordinating {
         try? AVAudioSession.sharedInstance().setActive(false)
     }
 
+    /// Called when the stream underruns. With `automaticallyWaitsToMinimizeStalling`
+    /// off, AVPlayer won't resume on its own, so we nudge it and start a grace
+    /// timer. If the buffer refills, `likelyToKeepUpObservation` cancels the timer;
+    /// if it doesn't, we escalate to a full reconnect.
+    private func handleStall() {
+        guard player != nil else { return }
+        writeDebug("[AVPlayer] stall detected, nudging playback")
+        player?.play()
+        guard stallEscalationTask == nil else { return }
+        stallEscalationTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: (self?.stallGracePeriod ?? 8) * 1_000_000_000)
+            guard let self, !Task.isCancelled else { return }
+            self.stallEscalationTask = nil
+            let likely = self.player?.currentItem?.isPlaybackLikelyToKeepUp ?? false
+            let rate = self.player?.rate ?? 0
+            if !likely && rate == 0 {
+                writeDebug("[AVPlayer] stall persisted, escalating to reconnect")
+                self.onPlaybackStalled?()
+            }
+        }
+    }
+
     private func setupObservers() {
         guard let player else { return }
 
@@ -212,7 +244,35 @@ final class AVPlayerController: PlayerCoordinating {
             }
         }
 
-        NotificationCenter.default.addObserver(
+        // Buffer underrun → potential stall.
+        bufferEmptyObservation = player.currentItem?.observe(\.isPlaybackBufferEmpty) { [weak self] item, _ in
+            guard item.isPlaybackBufferEmpty else { return }
+            Task { @MainActor in self?.handleStall() }
+        }
+
+        // Buffer refilled → cancel any pending escalation and resume if stopped.
+        likelyToKeepUpObservation = player.currentItem?.observe(\.isPlaybackLikelyToKeepUp) { [weak self] item, _ in
+            guard item.isPlaybackLikelyToKeepUp else { return }
+            Task { @MainActor in
+                guard let self else { return }
+                self.stallEscalationTask?.cancel()
+                self.stallEscalationTask = nil
+                if self.player?.rate == 0 {
+                    writeDebug("[AVPlayer] buffer recovered, resuming")
+                    self.player?.play()
+                }
+            }
+        }
+
+        notificationTokens.append(NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemPlaybackStalled,
+            object: player.currentItem,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.handleStall() }
+        })
+
+        notificationTokens.append(NotificationCenter.default.addObserver(
             forName: .AVPlayerItemDidPlayToEndTime,
             object: player.currentItem,
             queue: .main
@@ -220,7 +280,7 @@ final class AVPlayerController: PlayerCoordinating {
             Task { @MainActor in
                 self?.onPlaybackEnded?()
             }
-        }
+        })
     }
 
     private func removeObservers() {
@@ -232,6 +292,13 @@ final class AVPlayerController: PlayerCoordinating {
         statusObservation = nil
         rateObservation?.invalidate()
         rateObservation = nil
-        NotificationCenter.default.removeObserver(self)
+        bufferEmptyObservation?.invalidate()
+        bufferEmptyObservation = nil
+        likelyToKeepUpObservation?.invalidate()
+        likelyToKeepUpObservation = nil
+        stallEscalationTask?.cancel()
+        stallEscalationTask = nil
+        notificationTokens.forEach { NotificationCenter.default.removeObserver($0) }
+        notificationTokens.removeAll()
     }
 }

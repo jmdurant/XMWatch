@@ -32,8 +32,12 @@ final class XMRadioService {
     private var proxyServer = XMHLSProxyServer.shared
     private var pdtTimer: Task<Void, Never>?
     private var tokenTimer: Task<Void, Never>?
-    private var retryCount: Int = 0
-    private let maxRetries: Int = 3
+    /// True intent to be playing — set when the user starts a channel, cleared
+    /// when they pause. Unlike `isPaused`, this is NOT flipped by a stall dropping
+    /// the player rate to 0, so recovery uses it to decide whether to keep trying.
+    private(set) var userWantsPlayback: Bool = false
+    /// True while the recovery loop is actively re-establishing playback.
+    private(set) var isReconnecting: Bool = false
 
     var favoriteChannelNumbers: Set<String> {
         didSet { saveFavorites() }
@@ -482,6 +486,7 @@ final class XMRadioService {
 
     func startPlayback(channel: XMChannel) async {
         currentChannel = channel
+        userWantsPlayback = true
         isBuffering = true
 
         UserDefaults.standard.set(channel.number, forKey: "xm_last_channel")
@@ -534,6 +539,13 @@ final class XMRadioService {
             }
         }
 
+        controller.onPlaybackStalled = { [weak self] in
+            writeDebug("[RadioService] playback STALLED, reconnecting")
+            Task { @MainActor in
+                await self?.handlePlaybackInterruption()
+            }
+        }
+
         controller.onMediaLoaded = { [weak self] in
             Task { @MainActor in
                 self?.isBuffering = false
@@ -556,7 +568,6 @@ final class XMRadioService {
         dbg("playing \(proxyURL.absoluteString)")
         controller.play(proxyURL)
         isPaused = false
-        retryCount = 0
 
         let artURL = (nowPlayingArtURL ?? channel.largeImageURL).isEmpty
             ? nil : URL(string: nowPlayingArtURL ?? channel.largeImageURL)
@@ -582,12 +593,16 @@ final class XMRadioService {
     func togglePlayback() {
         guard let controller = playerController else { return }
         if controller.player?.rate == 0 {
+            // A recovery loop already owns restarting — don't race it.
+            guard !isReconnecting else { return }
             // For live streams, if paused the segments may have expired.
             // Restart from the live edge instead of trying to resume.
+            userWantsPlayback = true
             if let channel = currentChannel {
                 Task { await startPlayback(channel: channel) }
             }
         } else {
+            userWantsPlayback = false
             controller.pause()
         }
     }
@@ -643,29 +658,34 @@ final class XMRadioService {
 
     // MARK: - Session Recovery
 
+    /// Re-establishes playback after a failure or stall. Retries indefinitely with
+    /// exponential backoff (capped at 30s) for as long as the user still intends to
+    /// be playing — a transient network drop recovers on its own once connectivity
+    /// returns, rather than silently giving up after a few tries.
     private func handlePlaybackInterruption() async {
-        guard let channel = currentChannel, retryCount < maxRetries else {
-            if retryCount >= maxRetries {
-                dbg("max retries (\(maxRetries)) reached, giving up")
-                retryCount = 0
+        // Only one recovery loop at a time, and only while the user wants playback.
+        guard !isReconnecting, userWantsPlayback, currentChannel != nil else { return }
+
+        isReconnecting = true
+        defer { isReconnecting = false }
+
+        var attempt = 0
+        while userWantsPlayback, let channel = currentChannel {
+            attempt += 1
+            // Backoff: 2, 4, 8, 16, 30, 30, … seconds.
+            let delaySeconds = min(30, 1 << min(attempt, 5))
+            dbg("reconnect attempt \(attempt), waiting \(delaySeconds)s — re-establishing session")
+            try? await Task.sleep(nanoseconds: UInt64(delaySeconds) * 1_000_000_000)
+
+            guard userWantsPlayback, let channel = currentChannel else { break }
+
+            let sessionOk = await asyncSession(channelId: channel.id)
+            dbg("session re-established: \(sessionOk)")
+            if sessionOk {
+                await startPlayback(channel: channel)
+                return
             }
-            return
-        }
-
-        retryCount += 1
-        dbg("playback interrupted, retry \(retryCount)/\(maxRetries) — re-establishing session")
-
-        let delaySeconds = UInt64(retryCount) * 2
-        try? await Task.sleep(nanoseconds: delaySeconds * 1_000_000_000)
-
-        let sessionOk = await asyncSession(channelId: channel.id)
-        dbg("session re-established: \(sessionOk)")
-
-        if sessionOk {
-            await startPlayback(channel: channel)
-        } else {
             dbg("session recovery failed, will retry")
-            await handlePlaybackInterruption()
         }
     }
 
@@ -682,9 +702,10 @@ final class XMRadioService {
             let status = controller.player?.currentItem?.status.rawValue ?? -1
             dbg("foreground: player rate=\(rate) status=\(status)")
 
-            if rate == 0 && status != 0 {
+            // Player exists but isn't playing and isn't still loading — restart,
+            // unless the user paused or a recovery loop is already running.
+            if rate == 0 && status != 0 && userWantsPlayback && !isReconnecting {
                 dbg("foreground: player stalled, restarting playback")
-                retryCount = 0
                 await startPlayback(channel: channel)
             }
         }
@@ -706,6 +727,7 @@ final class XMRadioService {
 
     func signOut() {
         status = .signedOut
+        userWantsPlayback = false
         channels = []
         categories = []
         currentChannel = nil

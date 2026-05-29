@@ -24,7 +24,17 @@ struct XMPlayerView: View {
 
                     // Song title + Artist
                     VStack(spacing: 2) {
-                        if radioService.isBuffering {
+                        if radioService.isReconnecting {
+                            ProgressView()
+                                .padding(.bottom, 2)
+                            Text(channel.name)
+                                .font(.headline)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.center)
+                            Text("Reconnecting…")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else if radioService.isBuffering {
                             ProgressView()
                                 .padding(.bottom, 2)
                             Text(channel.name)

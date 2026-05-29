@@ -118,7 +118,18 @@ struct PlayerView: View {
     @ViewBuilder
     private func songInfo(channel: XMChannel) -> some View {
         VStack(spacing: 6) {
-            if radioService.isBuffering {
+            if radioService.isReconnecting {
+                ProgressView()
+                    .padding(.bottom, 4)
+                Text(channel.name)
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                Text("Reconnecting…")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else if radioService.isBuffering {
                 ProgressView()
                     .padding(.bottom, 4)
                 Text(channel.name)
