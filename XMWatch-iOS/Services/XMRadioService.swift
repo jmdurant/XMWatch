@@ -147,6 +147,44 @@ final class XMRadioService {
         return true
     }
 
+    /// Full re-login using stored credentials. Recovers a dead session — e.g.
+    /// after the app was killed and the auth cookies were lost — without touching
+    /// `status` or reloading channels, so playback recovery doesn't bounce the UI
+    /// back to the sign-in screen.
+    private func reauthenticate() async -> Bool {
+        let user = UserDefaults.standard.string(forKey: "user") ?? ""
+        let pass = UserDefaults.standard.string(forKey: "pass") ?? ""
+        guard !user.isEmpty, !pass.isEmpty else {
+            dbg("reauth: no stored credentials")
+            return false
+        }
+        dbg("reauth: logging in again")
+        let loginReq = LoginX(username: user, pass: pass)
+        guard let loginResult = await asyncPost(request: loginReq.request, endpoint: loginReq.endpoint) else {
+            dbg("reauth: login POST failed")
+            return false
+        }
+        let tuple: PostReturnTuple = (
+            message: "login",
+            success: true,
+            data: loginResult.data,
+            response: loginResult.response
+        )
+        let processed = processLogin(username: user, pass: pass, result: tuple)
+        dbg("reauth: processLogin \(processed.success)")
+        return processed.success
+    }
+
+    /// Establish an authenticated session, re-logging-in once if the session
+    /// call fails. A failed session is most often a lost/expired auth cookie,
+    /// which only a fresh login can restore.
+    private func ensureSession(channelId: String) async -> Bool {
+        if await asyncSession(channelId: channelId) { return true }
+        dbg("session failed — attempting re-login")
+        guard await reauthenticate() else { return false }
+        return await asyncSession(channelId: channelId)
+    }
+
     // MARK: - Async HTTP POST (replaces PostSync to avoid semaphore deadlocks)
     private func asyncPost(request: [String: Any], endpoint: String) async -> (data: [String: Any], response: HTTPURLResponse)? {
         guard let url = URL(string: endpoint) else {
@@ -363,7 +401,10 @@ final class XMRadioService {
 
         let proxyPort = XMHLSProxyServer.shared.port
 
-        let _ = await asyncSession(channelId: channel.id)
+        guard await ensureSession(channelId: channel.id) else {
+            dbg("tune: could not establish session")
+            return nil
+        }
         tokenRefreshTime = currentTimeMs()
 
         guard proxyPort != 0 else { return nil }
@@ -484,7 +525,8 @@ final class XMRadioService {
 
     // MARK: - Playback
 
-    func startPlayback(channel: XMChannel) async {
+    @discardableResult
+    func startPlayback(channel: XMChannel) async -> Bool {
         currentChannel = channel
         userWantsPlayback = true
         isBuffering = true
@@ -500,13 +542,18 @@ final class XMRadioService {
                 try await proxyServer.start()
             } catch {
                 dbg("proxy start failed: \(error)")
-                return
+                isBuffering = false
+                startRecoveryIfNeeded()
+                return false
             }
         }
 
+        // Get proxy URL (establishes/refreshes the session, re-logging-in if needed)
         guard let proxyURL = await tune(channel: channel) else {
             dbg("failed to get proxy URL")
-            return
+            isBuffering = false
+            startRecoveryIfNeeded()
+            return false
         }
 
         playerController?.destruct()
@@ -588,6 +635,15 @@ final class XMRadioService {
                 controller.logPlayerState()
             }
         }
+        return true
+    }
+
+    /// Kick off the backoff recovery loop for a direct-call failure (e.g. resume
+    /// at launch). No-op if a loop is already running — that loop drives its own
+    /// retries off startPlayback's return value.
+    private func startRecoveryIfNeeded() {
+        guard !isReconnecting, userWantsPlayback else { return }
+        Task { @MainActor in await handlePlaybackInterruption() }
     }
 
     func togglePlayback() {
@@ -679,13 +735,12 @@ final class XMRadioService {
 
             guard userWantsPlayback, let channel = currentChannel else { break }
 
-            let sessionOk = await asyncSession(channelId: channel.id)
-            dbg("session re-established: \(sessionOk)")
-            if sessionOk {
-                await startPlayback(channel: channel)
+            // startPlayback establishes the session (re-logging-in if needed) and
+            // restarts the stream from the live edge. Retry until it succeeds.
+            if await startPlayback(channel: channel) {
                 return
             }
-            dbg("session recovery failed, will retry")
+            dbg("reconnect attempt \(attempt) failed, will retry")
         }
     }
 
@@ -693,7 +748,7 @@ final class XMRadioService {
         guard let channel = currentChannel else { return }
         dbg("foreground: refreshing session for \(channel.name)")
 
-        let sessionOk = await asyncSession(channelId: channel.id)
+        let sessionOk = await ensureSession(channelId: channel.id)
         tokenRefreshTime = currentTimeMs()
         dbg("foreground session refresh: \(sessionOk)")
 
