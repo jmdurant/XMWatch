@@ -21,13 +21,16 @@ final class AVPlayerController: PlayerCoordinating {
     private var timeObserver: Any?
     private var statusObservation: NSKeyValueObservation?
     private var rateObservation: NSKeyValueObservation?
-    private var durationObservation: NSKeyValueObservation?
     private var bufferEmptyObservation: NSKeyValueObservation?
     private var likelyToKeepUpObservation: NSKeyValueObservation?
     private var notificationTokens: [NSObjectProtocol] = []
     private var stallEscalationTask: Task<Void, Never>?
-    /// Seconds a stall must persist (with no self-recovery) before we escalate to a full reconnect.
-    private let stallGracePeriod: UInt64 = 8
+    /// How long a stall must persist (with no self-recovery) before we escalate to a full reconnect.
+    private let stallGracePeriod = Duration.seconds(8)
+    /// The user's intent, not the player's rate — rate reads 0 while stalled as well,
+    /// and mistaking that for a pause (or the reverse) makes the player resume itself.
+    private var isPausedByUser = false
+    private var isBuffering = false
     var onPropertyChange: ((PlayerProperty, Any?) -> Void)?
     var onPlaybackEnded: (() -> Void)?
     var onPlaybackFailed: ((Error?) -> Void)?
@@ -36,6 +39,8 @@ final class AVPlayerController: PlayerCoordinating {
     /// self-recover within `stallGracePeriod`. The service treats this like a
     /// failure and re-establishes the session.
     var onPlaybackStalled: (() -> Void)?
+
+    var isPaused: Bool { isPausedByUser }
 
     init(options: PlayerOptions) {}
 
@@ -47,6 +52,7 @@ final class AVPlayerController: PlayerCoordinating {
 
     func play(_ url: URL) {
         writeDebug("[AVPlayer] play url=\(url.absoluteString)")
+        isPausedByUser = false
         configureAudioSession()
         let asset = AVURLAsset(url: url)
         let item = AVPlayerItem(asset: asset)
@@ -75,19 +81,26 @@ final class AVPlayerController: PlayerCoordinating {
     }
 
     func togglePlayback() {
-        guard let player else { return }
-        if player.rate == 0 {
-            player.play()
+        guard player != nil else { return }
+        if isPausedByUser {
+            resume()
         } else {
-            player.pause()
+            pause()
         }
     }
 
     func pause() {
+        isPausedByUser = true
+        // A stall stops mattering once the user pauses: drop the pending escalation so
+        // recovery can't reconnect and resume playback behind their back.
+        stallEscalationTask?.cancel()
+        stallEscalationTask = nil
+        setBuffering(false)
         player?.pause()
     }
 
     func resume() {
+        isPausedByUser = false
         player?.play()
     }
 
@@ -98,8 +111,11 @@ final class AVPlayerController: PlayerCoordinating {
 
     func seek(by delta: Double) {
         guard let player, let currentItem = player.currentItem else { return }
-        let currentTime = CMTimeGetSeconds(player.currentTime())
         let duration = CMTimeGetSeconds(currentItem.duration)
+        // Live streams report an indefinite duration; clamping against NaN yields NaN,
+        // and seeking to an invalid time traps.
+        guard duration.isFinite else { return }
+        let currentTime = CMTimeGetSeconds(player.currentTime())
         let newTime = min(max(0, currentTime + delta), duration)
         seek(to: newTime)
     }
@@ -117,15 +133,26 @@ final class AVPlayerController: PlayerCoordinating {
         }
     }
 
+    /// `trackList()` numbers subtitle tracks continuing on from the audio ones, so an id
+    /// coming back in has to be rebased onto the legible group's own indices. Anything
+    /// outside that range means "no subtitles".
     func selectSubtitleTrack(id: Int?) {
         guard let item = player?.currentItem else { return }
         guard let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .legible) else { return }
 
-        if let id, id < group.options.count {
-            item.select(group.options[id], in: group)
-        } else {
-            item.select(nil, in: group)
+        if let id {
+            let index = id - audioOptionCount
+            if index >= 0, index < group.options.count {
+                item.select(group.options[index], in: group)
+                return
+            }
         }
+        item.select(nil, in: group)
+    }
+
+    /// How many ids `trackList()` consumes before it starts numbering subtitles.
+    private var audioOptionCount: Int {
+        player?.currentItem?.asset.mediaSelectionGroup(forMediaCharacteristic: .audible)?.options.count ?? 0
     }
 
     func trackList() -> [PlayerTrack] {
@@ -176,26 +203,57 @@ final class AVPlayerController: PlayerCoordinating {
         removeObservers()
         player?.pause()
         player = nil
+        isBuffering = false
         try? AVAudioSession.sharedInstance().setActive(false)
+    }
+
+    /// Single owner of the buffering flag, so a healthy stream doesn't republish it on
+    /// every keep-up toggle and no exit path can leave the UI stuck on a spinner.
+    private func setBuffering(_ buffering: Bool) {
+        guard isBuffering != buffering else { return }
+        isBuffering = buffering
+        onPropertyChange?(.pausedForCache, buffering)
+        // Entering a stall retracts the `paused` we published when the rate hit 0.
+        // Leaving one needs no publish: the rate observer fires as playback resumes.
+        if buffering {
+            publishPauseState()
+        }
+    }
+
+    /// A stalled player reports rate 0, which is not a pause. Only report `paused` when
+    /// playback is stopped for some reason other than waiting on data — a real pause,
+    /// or an external interruption such as a phone call.
+    private func publishPauseState() {
+        onPropertyChange?(.pause, (player?.rate ?? 0) == 0 && !isBuffering)
     }
 
     /// Called when the stream underruns. With `automaticallyWaitsToMinimizeStalling`
     /// off, AVPlayer won't resume on its own, so we nudge it and start a grace
-    /// timer. If the buffer refills, `likelyToKeepUpObservation` cancels the timer;
+    /// timer. If playback makes forward progress the escalation is cancelled;
     /// if it doesn't, we escalate to a full reconnect.
     private func handleStall() {
-        guard player != nil else { return }
+        guard let player, !isPausedByUser else { return }
         writeDebug("[AVPlayer] stall detected, nudging playback")
-        player?.play()
+        setBuffering(true)
+        player.play()
         guard stallEscalationTask == nil else { return }
+
+        let stalledAt = CMTimeGetSeconds(player.currentTime())
+        let startPosition = stalledAt.isFinite ? stalledAt : 0
+        let grace = stallGracePeriod
         stallEscalationTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: (self?.stallGracePeriod ?? 8) * 1_000_000_000)
+            try? await Task.sleep(for: grace)
             guard let self, !Task.isCancelled else { return }
+            // Clear the slot before any other exit, or a later stall can never re-arm.
             self.stallEscalationTask = nil
-            let likely = self.player?.currentItem?.isPlaybackLikelyToKeepUp ?? false
-            let rate = self.player?.rate ?? 0
-            if !likely && rate == 0 {
-                writeDebug("[AVPlayer] stall persisted, escalating to reconnect")
+            guard !self.isPausedByUser else { return }
+            // `rate` is a useless signal here: with automaticallyWaitsToMinimizeStalling
+            // off, AVPlayer leaves it at 1 on a dead stream, and the nudge above sets it
+            // to 1 regardless. Only the clock moving forward proves the stream recovered.
+            let now = self.player.map { CMTimeGetSeconds($0.currentTime()) } ?? startPosition
+            let progressed = now.isFinite && now > startPosition + 0.5
+            if !progressed {
+                writeDebug("[AVPlayer] stall persisted (no forward progress), escalating to reconnect")
                 self.onPlaybackStalled?()
             }
         }
@@ -223,7 +281,9 @@ final class AVPlayerController: PlayerCoordinating {
                     if duration.isFinite {
                         self?.onPropertyChange?(.duration, duration)
                     }
-                    if self?.player?.rate == 0 {
+                    // Resume playback if the player stalled waiting for data — but never
+                    // override a pause the user asked for while the item was loading.
+                    if self?.player?.rate == 0, self?.isPausedByUser == false {
                         writeDebug("[AVPlayer] resuming playback after readyToPlay")
                         self?.player?.play()
                     }
@@ -240,7 +300,7 @@ final class AVPlayerController: PlayerCoordinating {
         rateObservation = player.observe(\.rate) { [weak self] player, _ in
             Task { @MainActor in
                 writeDebug("[AVPlayer] rate changed to \(player.rate)")
-                self?.onPropertyChange?(.pause, player.rate == 0)
+                self?.publishPauseState()
             }
         }
 
@@ -257,7 +317,10 @@ final class AVPlayerController: PlayerCoordinating {
                 guard let self else { return }
                 self.stallEscalationTask?.cancel()
                 self.stallEscalationTask = nil
-                if self.player?.rate == 0 {
+                self.setBuffering(false)
+                // Only resume a player the user didn't deliberately pause: pausing during
+                // a stall is exactly when this fires, and it must not undo the pause.
+                if self.player?.rate == 0, !self.isPausedByUser {
                     writeDebug("[AVPlayer] buffer recovered, resuming")
                     self.player?.play()
                 }
