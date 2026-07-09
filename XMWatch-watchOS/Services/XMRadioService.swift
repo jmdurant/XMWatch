@@ -576,9 +576,18 @@ final class XMRadioService {
 
         controller.onPropertyChange = { [weak self] property, value in
             Task { @MainActor in
-                if case .pause = property, let paused = value as? Bool {
-                    self?.isPaused = paused
-                    self?.nowPlayingManager?.updatePlaybackState(rate: paused ? 0.0 : 1.0)
+                switch property {
+                case .pause:
+                    if let paused = value as? Bool {
+                        self?.isPaused = paused
+                        self?.nowPlayingManager?.updatePlaybackState(rate: paused ? 0.0 : 1.0)
+                    }
+                case .pausedForCache:
+                    if let buffering = value as? Bool {
+                        self?.isBuffering = buffering
+                    }
+                default:
+                    break
                 }
             }
         }
@@ -665,7 +674,9 @@ final class XMRadioService {
 
     func togglePlayback() {
         guard let controller = playerController else { return }
-        if controller.player?.rate == 0 {
+        // Ask the controller for the user's intent, not the player's rate: rate is 0
+        // while stalled too, so a rate check turns the pause button into a restart.
+        if controller.isPaused {
             // A recovery loop already owns restarting — don't race it.
             guard !isReconnecting else { return }
             // For live streams, if paused the segments may have expired.
@@ -773,12 +784,18 @@ final class XMRadioService {
         // If player is dead or stalled, restart playback
         if let controller = playerController {
             let rate = controller.player?.rate ?? 0
-            let status = controller.player?.currentItem?.status.rawValue ?? -1
-            dbg("foreground: player rate=\(rate) status=\(status)")
+            let item = controller.player?.currentItem
+            let status = item?.status.rawValue ?? -1
+            let bufferEmpty = item?.isPlaybackBufferEmpty ?? false
+            dbg("foreground: player rate=\(rate) status=\(status) bufferEmpty=\(bufferEmpty)")
+
+            // With automaticallyWaitsToMinimizeStalling off, a dead stream keeps its rate
+            // at 1, so rate alone misses it — an empty buffer is what says "no data".
+            let isDead = rate == 0 || bufferEmpty
 
             // Player exists but isn't playing and isn't still loading — restart,
             // unless the user paused or a recovery loop is already running.
-            if rate == 0 && status != 0 && userWantsPlayback && !isReconnecting {
+            if isDead && status != 0 && userWantsPlayback && !isReconnecting {
                 dbg("foreground: player stalled, restarting playback")
                 await startPlayback(channel: channel)
             }
