@@ -32,6 +32,7 @@
 		E8B3AE4E1D2176AD7830A371 /* XMSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F70694EEA6AD961E985866 /* XMSettingsView.swift */; };
 		FADBE8E05A378DA8C6D024AC /* PlayerTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97F0752A04FD3CA7E636C1E /* PlayerTrack.swift */; };
 		FE945F83D6B491FDFF88C684 /* StubApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA14F22E9200CCBA01B68F0 /* StubApp.swift */; };
+		27B000000000000000000003 /* XMWatchAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B000000000000000000001 /* XMWatchAppIntents.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -105,6 +106,7 @@
 		DF43226A42AEF5B896445878 /* StarPlayrRadioKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = StarPlayrRadioKit; path = ../StarPlayrRadioKit; sourceTree = SOURCE_ROOT; };
 		DF70ABD2F0D8D6E092757E0F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		ECD393A110D458707D2ABACA /* WatchAVPlayerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAVPlayerController.swift; sourceTree = "<group>"; };
+		27B000000000000000000001 /* XMWatchAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMWatchAppIntents.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -152,6 +154,7 @@
 				0A6AFAC3E96F09041D7F4C77 /* Assets.xcassets */,
 				DEFDB2C118FDA81EA053FB6D /* XMWatchApp.swift */,
 				70CA14C1D6323C10AC113508 /* Features */,
+				27B000000000000000000002 /* Intents */,
 				D7A56B26141D83F8BA266734 /* Models */,
 				F5E26A658EDFA8203D2C354F /* Packages */,
 				813799D5CD14499DB6AA0D75 /* Player */,
@@ -160,6 +163,15 @@
 				670A5EDC378C397176249279 /* XMWatchWidget */,
 				1D7FD695A65C24B4FD597028 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		27B000000000000000000002 /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				27B000000000000000000001 /* XMWatchAppIntents.swift */,
+			);
+			name = Intents;
+			path = "../Shared/Intents";
 			sourceTree = "<group>";
 		};
 		66066FF2E747A2CE0FBA319E /* Channels */ = {
@@ -327,7 +339,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 2620;
+				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					3F67D1D12FB19695584C481B = {
 						DevelopmentTeam = ADVQS8RXPZ;
@@ -415,6 +427,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				27B000000000000000000003 /* XMWatchAppIntents.swift in Sources */,
 				520981A3A576A146556C7F61 /* PlayerCoordinating.swift in Sources */,
 				A47BF7326A7EFE996630D9C1 /* PlayerOptions.swift in Sources */,
 				AB1EBBA5116601B806DB431A /* PlayerProperty.swift in Sources */,
@@ -464,7 +477,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -495,7 +508,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Debug;
 		};
@@ -513,7 +526,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -548,7 +561,7 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Release;
 		};
@@ -573,7 +586,7 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Release;
 		};
@@ -595,7 +608,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Debug;
 		};
@@ -644,14 +657,14 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
-				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Release;
 		};
@@ -706,7 +719,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -714,7 +727,7 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Debug;
 		};

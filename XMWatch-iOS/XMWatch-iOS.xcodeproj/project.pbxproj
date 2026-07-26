@@ -49,6 +49,8 @@
 		DEF48DE03940488C745DA7F6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1917776153125FB22BC88377 /* Assets.xcassets */; };
 		E5CB9ABAAF58CF614CAD8032 /* XMRadioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12E41F91D898D83592C7CA3 /* XMRadioService.swift */; };
 		FFDA6F538F31D4C395DF64E0 /* XMHLSProxyServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BA9D9B65B44E700E6A98D4 /* XMHLSProxyServer.swift */; };
+		27A000000000000000000003 /* XMWatchAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27A000000000000000000001 /* XMWatchAppIntents.swift */; };
+		27A000000000000000000004 /* XMWatchAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27A000000000000000000001 /* XMWatchAppIntents.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -140,6 +142,7 @@
 		F674904C009DE993D63BCD9B /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
 		FD4AD3527EB1F9A815CA587F /* XMWatch-iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "XMWatch-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FF4A633D254641D0BA73096D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		27A000000000000000000001 /* XMWatchAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMWatchAppIntents.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -270,17 +273,23 @@
 			path = "../XMWatch-watchOS/Features";
 			sourceTree = "<group>";
 		};
+		27A000000000000000000002 /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				27A000000000000000000001 /* XMWatchAppIntents.swift */,
+			);
+			name = Intents;
+			path = "../Shared/Intents";
+			sourceTree = "<group>";
+		};
 		926E0BDD34616D41AFA14119 = {
 			isa = PBXGroup;
 			children = (
-				998051F0AD758C2DEC936192 /* Features */,
 				8DC45B3FD945725BCACA8910 /* Features */,
-				66BAD0B106C1F174DDA27E85 /* Models */,
 				E6982EB0AF39CDAB3D165286 /* Models */,
+				27A000000000000000000002 /* Intents */,
 				9DDDA2FDECDD1BCD9F46DC63 /* Packages */,
-				B4A5A7BA0D93B300840F5810 /* Player */,
 				D39EA6DE8627BFFF3EA97300 /* Player */,
-				715B5FA2B52FBB61645BB77A /* Services */,
 				588843F13B954DBEA3DCD4A9 /* Services */,
 				1E2C7A9B14427193D938BC44 /* XMWatch-iOS */,
 				06D4B6D2F65BD862FF53052B /* XMWatch-watchOS */,
@@ -481,7 +490,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 2620;
+				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					0BC34AC7B7E7857E99EAC716 = {
 						DevelopmentTeam = ADVQS8RXPZ;
@@ -561,6 +570,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				27A000000000000000000003 /* XMWatchAppIntents.swift in Sources */,
 				1791C59534EF0094F12E96F0 /* AVPlayerController.swift in Sources */,
 				D968CA71820A0E7AA6F0EFCD /* ChannelsView.swift in Sources */,
 				9505E35CB199210FD1E113B8 /* ContentView.swift in Sources */,
@@ -585,6 +595,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				27A000000000000000000004 /* XMWatchAppIntents.swift in Sources */,
 				97A3187A87FED8657CA5B88C /* PlayerCoordinating.swift in Sources */,
 				A612D7DC3F90D632794C3BFB /* PlayerOptions.swift in Sources */,
 				AD28B74F5B36A40137F45BCD /* PlayerProperty.swift in Sources */,
@@ -675,7 +686,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -684,7 +695,7 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Debug;
 		};
@@ -702,7 +713,7 @@
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Debug;
 		};
@@ -745,7 +756,7 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Release;
 		};
@@ -764,7 +775,7 @@
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Debug;
 		};
@@ -816,7 +827,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -824,7 +835,7 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Release;
 		};
@@ -846,7 +857,7 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Release;
 		};

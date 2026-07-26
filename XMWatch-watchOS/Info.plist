@@ -17,11 +17,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>MinimumOSVersion</key>
-	<string>26.0</string>
-	<key>UIDeviceFamily</key>
-	<array>
-		<integer>4</integer>
-	</array>
+	<string>27.0</string>
 	<key>WKApplication</key>
 	<true/>
 	<key>WKCompanionAppBundleIdentifier</key>

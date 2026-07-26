@@ -7,6 +7,8 @@ private let log = Logger(subsystem: "com.doctordurant.xmwatch.ios", category: "R
 
 @MainActor @Observable
 final class XMRadioService {
+    static let shared = XMRadioService()
+
     enum AuthStatus: Equatable {
         case signedOut
         case signingIn
@@ -630,7 +632,7 @@ final class XMRadioService {
         manager.updateMetadata(
             title: nowPlayingSong ?? channel.name,
             artist: nowPlayingArtist ?? "",
-            channel: "\(channel.name) - Ch. \(channel.number)",
+            channel: channel,
             artworkURL: artURL
         )
         manager.updatePlaybackState(rate: 1.0)
@@ -702,7 +704,7 @@ final class XMRadioService {
                     nowPlayingManager?.updateMetadata(
                         title: nowPlayingSong ?? channel.name,
                         artist: nowPlayingArtist ?? "",
-                        channel: "\(channel.name) - Ch. \(channel.number)",
+                        channel: channel,
                         artworkURL: artURL
                     )
                 }
@@ -737,7 +739,7 @@ final class XMRadioService {
         defer { isReconnecting = false }
 
         var attempt = 0
-        while userWantsPlayback, let channel = currentChannel {
+        while userWantsPlayback, currentChannel != nil {
             attempt += 1
             // Backoff: 2, 4, 8, 16, 30, 30, … seconds.
             let delaySeconds = min(30, 1 << min(attempt, 5))

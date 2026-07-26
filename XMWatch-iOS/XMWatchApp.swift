@@ -3,7 +3,7 @@ import StarPlayrRadioKit
 
 @main
 struct XMWatchApp: App {
-    @State private var radioService = XMRadioService()
+    @State private var radioService = XMRadioService.shared
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("xm_appearance") private var appearance = "system"
 

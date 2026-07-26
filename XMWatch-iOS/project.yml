@@ -2,9 +2,9 @@ name: XMWatch-iOS
 options:
   bundleIdPrefix: com.doctordurant.xmwatch
   deploymentTarget:
-    iOS: "26.0"
-    watchOS: "26.0"
-  xcodeVersion: "26.2"
+    iOS: "27.0"
+    watchOS: "27.0"
+  xcodeVersion: "27.0"
 
 settings:
   base:
@@ -29,6 +29,7 @@ targets:
           - "*.xcodeproj"
           - ".build"
           - ".swiftpm"
+      - path: ../Shared/Intents
     dependencies:
       - package: StarPlayrRadioKit
       - target: XMWatch-watchOS
@@ -50,7 +51,7 @@ targets:
   XMWatch-watchOS:
     type: application
     platform: watchOS
-    deploymentTarget: "26.0"
+    deploymentTarget: "27.0"
     sources:
       - path: ../XMWatch-watchOS/XMWatchApp.swift
       - path: ../XMWatch-watchOS/Features
@@ -58,6 +59,7 @@ targets:
       - path: ../XMWatch-watchOS/Player
       - path: ../XMWatch-watchOS/Services
       - path: ../XMWatch-watchOS/Assets.xcassets
+      - path: ../Shared/Intents
     dependencies:
       - package: StarPlayrRadioKit
       - target: XMWatchWidgetExtension
@@ -82,7 +84,7 @@ targets:
   XMWatchWidgetExtension:
     type: app-extension
     platform: watchOS
-    deploymentTarget: "26.0"
+    deploymentTarget: "27.0"
     sources:
       - path: ../XMWatch-watchOS/XMWatchWidget
     settings:

@@ -13,6 +13,7 @@ struct AudioRoutePicker: UIViewRepresentable {
 
 struct PlayerView: View {
     @Environment(XMRadioService.self) private var radioService
+    @Environment(\.systemPrefersReducedResourceUsage) private var prefersReducedResourceUsage
     @State private var isCompact = true
 
     var body: some View {
@@ -81,7 +82,9 @@ struct PlayerView: View {
     @ViewBuilder
     private func channelArtwork(channel: XMChannel, size: CGFloat) -> some View {
         Group {
-            if let artURL = radioService.nowPlayingArtURL, let url = URL(string: artURL) {
+            if !prefersReducedResourceUsage,
+               let artURL = radioService.nowPlayingArtURL,
+               let url = URL(string: artURL) {
                 AsyncImage(url: url) { image in
                     image
                         .resizable()

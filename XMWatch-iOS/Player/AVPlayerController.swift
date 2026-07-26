@@ -25,12 +25,15 @@ final class AVPlayerController: PlayerCoordinating {
     private var likelyToKeepUpObservation: NSKeyValueObservation?
     private var notificationTokens: [NSObjectProtocol] = []
     private var stallEscalationTask: Task<Void, Never>?
+    private var audioSelectionGroup: AVMediaSelectionGroup?
+    private var subtitleSelectionGroup: AVMediaSelectionGroup?
     /// How long a stall must persist (with no self-recovery) before we escalate to a full reconnect.
     private let stallGracePeriod = Duration.seconds(8)
     /// The user's intent, not the player's rate — rate reads 0 while stalled as well,
     /// and mistaking that for a pause (or the reverse) makes the player resume itself.
     private var isPausedByUser = false
     private var isBuffering = false
+    private var shouldResumeAfterInterruption = false
     var onPropertyChange: ((PlayerProperty, Any?) -> Void)?
     var onPlaybackEnded: (() -> Void)?
     var onPlaybackFailed: ((Error?) -> Void)?
@@ -56,6 +59,8 @@ final class AVPlayerController: PlayerCoordinating {
         configureAudioSession()
         let asset = AVURLAsset(url: url)
         let item = AVPlayerItem(asset: asset)
+        audioSelectionGroup = nil
+        subtitleSelectionGroup = nil
         player = AVPlayer(playerItem: item)
         player?.allowsExternalPlayback = false
         player?.audiovisualBackgroundPlaybackPolicy = .continuesIfPossible
@@ -126,7 +131,7 @@ final class AVPlayerController: PlayerCoordinating {
 
     func selectAudioTrack(id: Int?) {
         guard let item = player?.currentItem else { return }
-        guard let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .audible) else { return }
+        guard let group = audioSelectionGroup else { return }
 
         if let id, id < group.options.count {
             item.select(group.options[id], in: group)
@@ -138,7 +143,7 @@ final class AVPlayerController: PlayerCoordinating {
     /// outside that range means "no subtitles".
     func selectSubtitleTrack(id: Int?) {
         guard let item = player?.currentItem else { return }
-        guard let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .legible) else { return }
+        guard let group = subtitleSelectionGroup else { return }
 
         if let id {
             let index = id - audioOptionCount
@@ -152,7 +157,7 @@ final class AVPlayerController: PlayerCoordinating {
 
     /// How many ids `trackList()` consumes before it starts numbering subtitles.
     private var audioOptionCount: Int {
-        player?.currentItem?.asset.mediaSelectionGroup(forMediaCharacteristic: .audible)?.options.count ?? 0
+        audioSelectionGroup?.options.count ?? 0
     }
 
     func trackList() -> [PlayerTrack] {
@@ -160,7 +165,7 @@ final class AVPlayerController: PlayerCoordinating {
         var tracks: [PlayerTrack] = []
         var trackId = 0
 
-        if let audioGroup = item.asset.mediaSelectionGroup(forMediaCharacteristic: .audible) {
+        if let audioGroup = audioSelectionGroup {
             let selected = item.currentMediaSelection.selectedMediaOption(in: audioGroup)
             for option in audioGroup.options {
                 let locale = option.locale?.identifier
@@ -178,7 +183,7 @@ final class AVPlayerController: PlayerCoordinating {
             }
         }
 
-        if let subtitleGroup = item.asset.mediaSelectionGroup(forMediaCharacteristic: .legible) {
+        if let subtitleGroup = subtitleSelectionGroup {
             let selected = item.currentMediaSelection.selectedMediaOption(in: subtitleGroup)
             for option in subtitleGroup.options {
                 let locale = option.locale?.identifier
@@ -203,6 +208,9 @@ final class AVPlayerController: PlayerCoordinating {
         removeObservers()
         player?.pause()
         player = nil
+        audioSelectionGroup = nil
+        subtitleSelectionGroup = nil
+        shouldResumeAfterInterruption = false
         isBuffering = false
         try? AVAudioSession.sharedInstance().setActive(false)
     }
@@ -259,6 +267,11 @@ final class AVPlayerController: PlayerCoordinating {
         }
     }
 
+    private func loadSelectionGroups(for item: AVPlayerItem) async {
+        audioSelectionGroup = try? await item.asset.loadMediaSelectionGroup(for: .audible)
+        subtitleSelectionGroup = try? await item.asset.loadMediaSelectionGroup(for: .legible)
+    }
+
     private func setupObservers() {
         guard let player else { return }
 
@@ -276,6 +289,7 @@ final class AVPlayerController: PlayerCoordinating {
                 writeDebug("[AVPlayer] status=\(item.status.rawValue), error=\(item.error?.localizedDescription ?? "none")")
                 switch item.status {
                 case .readyToPlay:
+                    await self?.loadSelectionGroups(for: item)
                     let duration = CMTimeGetSeconds(item.duration)
                     writeDebug("[AVPlayer] readyToPlay, duration=\(duration)")
                     if duration.isFinite {
@@ -328,7 +342,7 @@ final class AVPlayerController: PlayerCoordinating {
         }
 
         notificationTokens.append(NotificationCenter.default.addObserver(
-            forName: .AVPlayerItemPlaybackStalled,
+            forName: AVPlayerItem.playbackStalledNotification,
             object: player.currentItem,
             queue: .main
         ) { [weak self] _ in
@@ -336,12 +350,74 @@ final class AVPlayerController: PlayerCoordinating {
         })
 
         notificationTokens.append(NotificationCenter.default.addObserver(
-            forName: .AVPlayerItemDidPlayToEndTime,
+            forName: AVPlayerItem.didPlayToEndTimeNotification,
             object: player.currentItem,
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
                 self?.onPlaybackEnded?()
+            }
+        })
+
+        let audioSession = AVAudioSession.sharedInstance()
+        notificationTokens.append(NotificationCenter.default.addObserver(
+            forName: AVAudioSession.didBecomeInactiveNotification,
+            object: audioSession,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                self.shouldResumeAfterInterruption =
+                    self.player != nil && !self.isPausedByUser
+                if self.shouldResumeAfterInterruption {
+                    self.player?.pause()
+                    self.publishPauseState()
+                }
+            }
+        })
+
+        notificationTokens.append(NotificationCenter.default.addObserver(
+            forName: AVAudioSession.resumptionRecommendationNotification,
+            object: audioSession,
+            queue: .main
+        ) { [weak self] notification in
+            let recommendation =
+                (notification.userInfo?[AVAudioSession.resumptionContextKey]
+                    as? AVAudioSession.ResumptionContext)?.recommendation
+            Task { @MainActor in
+                guard let self else { return }
+                if self.shouldResumeAfterInterruption,
+                   recommendation == .shouldResume,
+                   !self.isPausedByUser {
+                    self.configureAudioSession()
+                    self.player?.play()
+                }
+                self.shouldResumeAfterInterruption = false
+            }
+        })
+
+        notificationTokens.append(NotificationCenter.default.addObserver(
+            forName: AVAudioSession.routeChangeNotification,
+            object: audioSession,
+            queue: .main
+        ) { [weak self] notification in
+            let rawReason = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt
+            guard AVAudioSession.RouteChangeReason(rawValue: rawReason ?? 0)
+                    == .oldDeviceUnavailable else { return }
+            Task { @MainActor in
+                self?.pause()
+            }
+        })
+
+        notificationTokens.append(NotificationCenter.default.addObserver(
+            forName: AVAudioSession.mediaServicesWereResetNotification,
+            object: audioSession,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self, self.player != nil else { return }
+                self.configureAudioSession()
+                self.onPlaybackStalled?()
             }
         })
     }

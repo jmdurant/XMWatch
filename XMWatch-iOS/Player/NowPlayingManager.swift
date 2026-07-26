@@ -71,16 +71,24 @@ final class NowPlayingManager {
 
     // MARK: - XM Metadata
 
-    func updateMetadata(title: String, artist: String, channel: String, artworkURL: URL?) {
+    func updateMetadata(title: String, artist: String, channel: XMChannel, artworkURL: URL?) {
         var info = infoCenter.nowPlayingInfo ?? [:]
 
         info[MPMediaItemPropertyTitle] = title
         info[MPMediaItemPropertyArtist] = artist
-        info[MPMediaItemPropertyAlbumTitle] = channel
+        info[MPMediaItemPropertyAlbumTitle] = "\(channel.name) - Ch. \(channel.number)"
         info[MPNowPlayingInfoPropertyIsLiveStream] = true
         info[MPNowPlayingInfoPropertyMediaType] = MPNowPlayingInfoMediaType.audio.rawValue
+        info[MPNowPlayingInfoPropertyDefaultPlaybackRate] = 1.0
+        if let appEntityIdentifier =
+            XMRadioEntityDonations.nowPlayingIdentifier(for: channel) {
+            info[MPNowPlayingInfoPropertyAppEntityIdentifiers] = [
+                appEntityIdentifier
+            ]
+        }
 
         infoCenter.nowPlayingInfo = info
+        XMRadioEntityDonations.update(with: channel)
 
         if let artworkURL, artworkURL != lastArtworkURL {
             lastArtworkURL = artworkURL
@@ -89,6 +97,7 @@ final class NowPlayingManager {
     }
 
     private func loadArtwork(from url: URL) {
+        guard !UIApplication.shared.systemPrefersReducedResourceUsage else { return }
         Task {
             guard let (data, _) = try? await URLSession.shared.data(from: url),
                   let original = UIImage(data: data) else {
