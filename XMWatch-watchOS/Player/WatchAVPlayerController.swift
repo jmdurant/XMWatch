@@ -34,6 +34,9 @@ final class WatchAVPlayerController: PlayerCoordinating {
     private var isPausedByUser = false
     private var isBuffering = false
     private var shouldResumeAfterInterruption = false
+    /// We paused because the output route went away (headphones pulled). Set so that when
+    /// that device comes back we resume, instead of leaving a silent, paused player.
+    private var pausedByRouteLoss = false
     var onPropertyChange: ((PlayerProperty, Any?) -> Void)?
     var onPlaybackEnded: (() -> Void)?
     var onPlaybackFailed: ((Error?) -> Void)?
@@ -61,6 +64,7 @@ final class WatchAVPlayerController: PlayerCoordinating {
     func play(_ url: URL) {
         writeDebug("[WatchAVPlayer] play url=\(url.absoluteString)")
         isPausedByUser = false
+        pausedByRouteLoss = false
         configureAudioSession()
         let asset = AVURLAsset(url: url)
         let item = AVPlayerItem(asset: asset)
@@ -90,8 +94,13 @@ final class WatchAVPlayerController: PlayerCoordinating {
     }
 
     func togglePlayback() {
-        guard player != nil else { return }
-        if isPausedByUser {
+        guard let player else { return }
+        // iOS pauses the player itself on a route loss or interruption without routing
+        // through pause(), so `isPausedByUser` can read "playing" while the player sits at
+        // rate 0. Treat a stopped-and-not-buffering player as paused too, or the next
+        // toggle would re-pause an already paused player (the play button doing nothing).
+        let effectivelyPaused = isPausedByUser || (player.rate == 0 && !isBuffering)
+        if effectivelyPaused {
             resume()
         } else {
             pause()
@@ -100,6 +109,7 @@ final class WatchAVPlayerController: PlayerCoordinating {
 
     func pause() {
         isPausedByUser = true
+        pausedByRouteLoss = false
         // A stall stops mattering once the user pauses: drop the pending escalation so
         // recovery can't reconnect and resume playback behind their back.
         stallEscalationTask?.cancel()
@@ -110,7 +120,16 @@ final class WatchAVPlayerController: PlayerCoordinating {
 
     func resume() {
         isPausedByUser = false
-        player?.play()
+        pausedByRouteLoss = false
+        // An interruption or route change can deactivate the shared session; playing into
+        // an inactive session is silent on watchOS. Re-activate, then play in the callback
+        // (an already-active session calls back immediately).
+        AVAudioSession.sharedInstance().activate(options: []) { [weak self] _, _ in
+            Task { @MainActor in
+                guard let self, !self.isPausedByUser else { return }
+                self.player?.play()
+            }
+        }
     }
 
     func seek(to time: Double) {
@@ -406,10 +425,26 @@ final class WatchAVPlayerController: PlayerCoordinating {
             queue: .main
         ) { [weak self] notification in
             let rawReason = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt
-            guard AVAudioSession.RouteChangeReason(rawValue: rawReason ?? 0)
-                    == .oldDeviceUnavailable else { return }
+            let reason = AVAudioSession.RouteChangeReason(rawValue: rawReason ?? 0)
             Task { @MainActor in
-                self?.pause()
+                guard let self, self.player != nil else { return }
+                switch reason {
+                case .oldDeviceUnavailable:
+                    // Headphones/Bluetooth output vanished — never fall back to the speaker.
+                    // Arm a reconnect-resume so plugging back in continues playback.
+                    let wasPlaying = !self.isPausedByUser
+                    self.pause()
+                    self.pausedByRouteLoss = wasPlaying
+                case .newDeviceAvailable:
+                    // The output came back (headphones reconnected). Resume only if the
+                    // route loss is what paused us.
+                    if self.pausedByRouteLoss {
+                        self.pausedByRouteLoss = false
+                        self.resume()
+                    }
+                default:
+                    break
+                }
             }
         })
 
