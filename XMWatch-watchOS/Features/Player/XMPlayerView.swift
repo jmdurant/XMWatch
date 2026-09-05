@@ -70,7 +70,7 @@ struct XMPlayerView: View {
                         Button {
                             radioService.togglePlayback()
                         } label: {
-                            Image(systemName: radioService.isPaused ? "play.fill" : "pause.fill")
+                            Image(systemName: !radioService.userWantsPlayback ? "play.fill" : "pause.fill")
                                 .font(.title2)
                         }
                         .buttonStyle(.plain)
@@ -83,8 +83,6 @@ struct XMPlayerView: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    .opacity(radioService.isBuffering ? 0.4 : 1.0)
-                    .disabled(radioService.isBuffering)
                 }
                 .padding()
             } else {

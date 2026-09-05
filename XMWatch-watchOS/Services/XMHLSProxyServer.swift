@@ -2,7 +2,8 @@ import Foundation
 import Network
 import StarPlayrRadioKit
 
-final class XMHLSProxyServer: @unchecked Sendable {
+@MainActor
+final class XMHLSProxyServer {
     static let shared = XMHLSProxyServer()
 
     private var listener: NWListener?
@@ -10,65 +11,69 @@ final class XMHLSProxyServer: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.xmwatch.hlsproxy")
     private(set) var port: UInt16 = 0
 
-    private var tokenRefreshTime: Int = 0
-
     var isRunning: Bool { listener != nil }
 
     func start() async throws {
-        if isRunning { stop() }
+        if let listener {
+            try await waitUntilReady(listener)
+            return
+        }
 
         let parameters = NWParameters.tcp
         parameters.allowLocalEndpointReuse = true
         let nwListener = try NWListener(using: parameters, on: .any)
 
         nwListener.stateUpdateHandler = { [weak self] state in
-            switch state {
-            case .ready:
-                if let assignedPort = nwListener.port?.rawValue {
-                    self?.port = assignedPort
-                    writeDebug("[XMHLSProxy] listening on localhost:\(assignedPort)")
+            Task { @MainActor in
+                guard let self, self.listener === nwListener else { return }
+                switch state {
+                case .ready:
+                    if let assignedPort = nwListener.port?.rawValue {
+                        self.port = assignedPort
+                        writeDebug("[XMHLSProxy] listening on localhost:\(assignedPort)")
+                    }
+                case .failed(let error):
+                    writeDebug("[XMHLSProxy] listener failed: \(error)")
+                    self.stop()
+                default:
+                    break
                 }
-            case .failed(let error):
-                writeDebug("[XMHLSProxy] listener failed: \(error)")
-                self?.stop()
-            default:
-                break
             }
         }
 
         nwListener.newConnectionHandler = { [weak self] connection in
-            self?.handleNewConnection(connection)
+            Task { @MainActor in
+                guard let self, self.listener === nwListener else { connection.cancel(); return }
+                self.handleNewConnection(connection)
+            }
         }
 
         listener = nwListener
         nwListener.start(queue: queue)
 
-        // Wait briefly for the port to be assigned
+        try await waitUntilReady(nwListener)
+    }
+
+    private func waitUntilReady(_ expected: NWListener) async throws {
         for _ in 0..<20 {
-            if port != 0 { break }
-            try await Task.sleep(nanoseconds: 50_000_000) // 50ms
+            try Task.checkCancellation()
+            guard listener === expected else { throw URLError(.cannotConnectToHost) }
+            if port != 0 { return }
+            try await Task.sleep(for: .milliseconds(50))
         }
-
-        guard port != 0 else {
-            stop()
-            throw URLError(.cannotConnectToHost)
-        }
-
-        tokenRefreshTime = currentTimeMs()
+        if listener === expected { stop() }
+        throw URLError(.cannotConnectToHost)
     }
 
     func stop() {
-        queue.async { [weak self] in
-            guard let self else { return }
-            for connection in self.activeConnections {
-                connection.cancel()
-            }
-            self.activeConnections.removeAll()
-            self.listener?.cancel()
-            self.listener = nil
-            self.port = 0
-            writeDebug("[XMHLSProxy] stopped")
-        }
+        for connection in activeConnections { connection.cancel() }
+        activeConnections.removeAll()
+        listener?.stateUpdateHandler = nil
+        listener?.newConnectionHandler = nil
+        listener?.cancel()
+        listener = nil
+        port = 0
+        writeDebug("[XMHLSProxy] stopped")
     }
 
     // MARK: - Connection Handling
@@ -78,7 +83,7 @@ final class XMHLSProxyServer: @unchecked Sendable {
 
         connection.stateUpdateHandler = { [weak self, weak connection] state in
             if case .failed = state, let connection {
-                self?.removeConnection(connection)
+                Task { @MainActor in self?.removeConnection(connection) }
             }
         }
 
@@ -88,19 +93,21 @@ final class XMHLSProxyServer: @unchecked Sendable {
 
     private func receiveRequest(from connection: NWConnection) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, _, error in
-            guard let self, let data, error == nil else {
-                connection.cancel()
-                self?.removeConnection(connection)
-                return
-            }
+            Task { @MainActor in
+                guard let self, let data, error == nil else {
+                    connection.cancel()
+                    self?.removeConnection(connection)
+                    return
+                }
 
-            guard let request = self.parseHTTPRequest(data) else {
-                self.sendErrorResponse(status: 400, message: "Bad Request", to: connection)
-                return
-            }
+                guard let request = self.parseHTTPRequest(data) else {
+                    self.sendErrorResponse(status: 400, message: "Bad Request", to: connection)
+                    return
+                }
 
-            writeDebug("[XMHLSProxy] \(request.method) \(request.path)")
-            self.routeRequest(request, to: connection)
+                writeDebug("[XMHLSProxy] \(request.method) \(request.path)")
+                self.routeRequest(request, to: connection)
+            }
         }
     }
 
@@ -167,13 +174,18 @@ final class XMHLSProxyServer: @unchecked Sendable {
                 return
             }
 
+            guard XMRadioService.shared.currentChannel?.id == channelId else {
+                self.sendErrorResponse(status: 410, message: "Channel changed", to: connection)
+                return
+            }
+
             // Ensure current channel is set
             userX.channel = channelId
 
-            // Refresh token if needed (every 480 seconds)
-            if (self.currentTimeMs() - self.tokenRefreshTime) >= 480_000 {
-                await self.asyncTokenRefresh(channelId: channelId)
-                self.tokenRefreshTime = self.currentTimeMs()
+            // All refreshes share the service's successful-refresh timestamp and task.
+            guard await XMRadioService.shared.refreshTokenIfNeeded() else {
+                self.sendErrorResponse(status: 503, message: "Session unavailable", to: connection)
+                return
             }
 
             // Get the playlist URL from StarPlayrRadioKit
@@ -186,7 +198,10 @@ final class XMHLSProxyServer: @unchecked Sendable {
             }
 
             do {
-                let (data, _) = try await URLSession.shared.data(from: url)
+                let (data, response) = try await URLSession.shared.data(from: url)
+                guard let response = response as? HTTPURLResponse, (200..<300).contains(response.statusCode) else {
+                    throw URLError(.badServerResponse)
+                }
                 guard let playlistText = String(data: data, encoding: .utf8), !playlistText.isEmpty else {
                     writeDebug("[XMHLSProxy] playlist fetch EMPTY for ch \(channelNumber)")
                     self.sendErrorResponse(status: 502, message: "Failed to fetch playlist", to: connection)
@@ -228,7 +243,10 @@ final class XMHLSProxyServer: @unchecked Sendable {
             }
 
             do {
-                let (audioData, _) = try await URLSession.shared.data(from: url)
+                let (audioData, response) = try await URLSession.shared.data(from: url)
+                guard let response = response as? HTTPURLResponse, (200..<300).contains(response.statusCode) else {
+                    throw URLError(.badServerResponse)
+                }
 
                 guard !audioData.isEmpty else {
                     writeDebug("[XMHLSProxy] audio segment EMPTY: \(segment)")
@@ -348,7 +366,7 @@ final class XMHLSProxyServer: @unchecked Sendable {
 
         connection.send(content: fullResponse, completion: .contentProcessed { [weak self] _ in
             connection.cancel()
-            self?.removeConnection(connection)
+            Task { @MainActor in self?.removeConnection(connection) }
         })
     }
 
@@ -361,65 +379,4 @@ final class XMHLSProxyServer: @unchecked Sendable {
         activeConnections.removeAll { $0 === connection }
     }
 
-    private func asyncTokenRefresh(channelId: String) async {
-        let timeInterval = Date().timeIntervalSince1970
-        let intTime = Int(timeInterval * 1000)
-        let time = String(intTime)
-
-        let endpoint = "\(http)\(root)/resume?channelId=\(channelId)&contentType=live&timestamp=\(time)&cacheBuster=\(time)"
-        let request: [String: Any] = [
-            "moduleList": [
-                "modules": [
-                    ["moduleRequest": [
-                        "resultTemplate": "web",
-                        "deviceInfo": [
-                            "osVersion": "Mac",
-                            "platform": "Web",
-                            "clientDeviceType": "web",
-                            "sxmAppVersion": "3.1802.10011.0",
-                            "browser": "Safari",
-                            "browserVersion": "11.0.3",
-                            "appRegion": appRegion,
-                            "deviceModel": "K2WebClient",
-                            "player": "html5",
-                            "clientDeviceId": "null"
-                        ]
-                    ]]
-                ]
-            ]
-        ]
-
-        guard let url = URL(string: endpoint) else { return }
-        var urlReq = URLRequest(url: url)
-        urlReq.httpMethod = "POST"
-        urlReq.setValue(userAgent, forHTTPHeaderField: "User-Agent")
-        urlReq.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        urlReq.httpBody = try? JSONSerialization.data(withJSONObject: request, options: .prettyPrinted)
-        urlReq.timeoutInterval = 60
-
-        do {
-            let (_, response) = try await URLSession.shared.data(for: urlReq)
-            guard let httpResp = response as? HTTPURLResponse, httpResp.statusCode == 200 else { return }
-
-            if let fields = httpResp.allHeaderFields as? [String: String],
-               let respURL = httpResp.url {
-                let cookies = HTTPCookie.cookies(withResponseHeaderFields: fields, for: respURL)
-                HTTPCookieStorage.shared.setCookies(cookies, for: respURL, mainDocumentURL: URL(string: http + root))
-                for cookie in cookies where cookie.name == "SXMAKTOKEN" {
-                    let t = cookie.value
-                    if t.count > 44 {
-                        userX.token = String(t[t.index(t.startIndex, offsetBy: 3)...t.index(t.startIndex, offsetBy: 45)])
-                        UserDefaults.standard.set(userX.token, forKey: "token")
-                    }
-                }
-            }
-            writeDebug("[XMHLSProxy] token refreshed")
-        } catch {
-            writeDebug("[XMHLSProxy] token refresh failed: \(error)")
-        }
-    }
-
-    private func currentTimeMs() -> Int {
-        Int(Date().timeIntervalSince1970 * 1000)
-    }
 }

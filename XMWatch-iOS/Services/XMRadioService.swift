@@ -34,6 +34,12 @@ final class XMRadioService {
     private var proxyServer = XMHLSProxyServer.shared
     private var pdtTimer: Task<Void, Never>?
     private var tokenTimer: Task<Void, Never>?
+    private var playbackTask: Task<Bool, Never>?
+    private var recoveryTask: Task<Void, Never>?
+    private var refreshTask: Task<Bool, Never>?
+    private var playbackGeneration = UUID()
+    private let httpSession: URLSession
+    private let now: () -> Date
     /// True intent to be playing — set when the user starts a channel, cleared
     /// when they pause. Unlike `isPaused`, this is NOT flipped by a stall dropping
     /// the player rate to 0, so recovery uses it to decide whether to keep trying.
@@ -48,7 +54,9 @@ final class XMRadioService {
     private var tokenRefreshTime: Int = 0
     private var pdtCache: [String: Any] = [:]
 
-    init() {
+    init(httpSession: URLSession = .shared, now: @escaping () -> Date = Date.init) {
+        self.httpSession = httpSession
+        self.now = now
         let saved = UserDefaults.standard.stringArray(forKey: "xm_favorites") ?? []
         favoriteChannelNumbers = Set(saved)
 
@@ -69,7 +77,8 @@ final class XMRadioService {
 
     // MARK: - Async Session (replaces Session() to avoid semaphore deadlocks)
     private func asyncSession(channelId: String) async -> Bool {
-        let timeInterval = Date().timeIntervalSince1970
+        let generation = playbackGeneration
+        let timeInterval = now().timeIntervalSince1970
         let intTime = Int(timeInterval * 1000)
         let time = String(intTime)
 
@@ -101,9 +110,26 @@ final class XMRadioService {
             return false
         }
 
+        guard !Task.isCancelled, generation == playbackGeneration else { return false }
+
         dbg("session HTTP \(result.response.statusCode)")
 
         guard result.response.statusCode == 200 else { return false }
+
+        let responseDict = result.data as NSDictionary
+        guard let modules = responseDict.value(forKeyPath: "ModuleListResponse.moduleList.modules") as? NSArray,
+              let module = modules.firstObject as? NSDictionary,
+              let infos = module.value(forKeyPath: "moduleResponse.liveChannelData.customAudioInfos") as? NSArray,
+              let info = infos.firstObject as? NSDictionary,
+              let chunks = info.value(forKeyPath: "chunks.chunks") as? NSArray,
+              let chunk = chunks.firstObject as? NSDictionary,
+              let key = chunk["key"] as? String,
+              let decodedKey = Data(base64Encoded: key), decodedKey.count == 16,
+              chunk["keyUrl"] is String,
+              module.value(forKeyPath: "moduleResponse.liveChannelData.hlsConsumptionInfo") is String else {
+            dbg("session response missing valid playback keys")
+            return false
+        }
 
         // Extract SXMAKTOKEN from cookies
         if let fields = result.response.allHeaderFields as? [String: String],
@@ -113,7 +139,7 @@ final class XMRadioService {
 
             for cookie in cookies where cookie.name == "SXMAKTOKEN" {
                 let t = cookie.value
-                if t.count > 44 {
+                if t.count > 45 {
                     let startIndex = t.index(t.startIndex, offsetBy: 3)
                     let endIndex = t.index(t.startIndex, offsetBy: 45)
                     userX.token = String(t[startIndex...endIndex])
@@ -166,6 +192,7 @@ final class XMRadioService {
             dbg("reauth: login POST failed")
             return false
         }
+        guard !Task.isCancelled else { return false }
         let tuple: PostReturnTuple = (
             message: "login",
             success: true,
@@ -182,6 +209,7 @@ final class XMRadioService {
     /// which only a fresh login can restore.
     private func ensureSession(channelId: String) async -> Bool {
         if await asyncSession(channelId: channelId) { return true }
+        guard !Task.isCancelled else { return false }
         dbg("session failed — attempting re-login")
         guard await reauthenticate() else { return false }
         return await asyncSession(channelId: channelId)
@@ -202,7 +230,7 @@ final class XMRadioService {
         urlReq.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
 
         do {
-            let (data, response) = try await URLSession.shared.data(for: urlReq)
+            let (data, response) = try await httpSession.data(for: urlReq)
             guard let httpResp = response as? HTTPURLResponse else {
                 dbg("POST: not HTTPURLResponse")
                 return nil
@@ -401,14 +429,13 @@ final class XMRadioService {
     func tune(channel: XMChannel) async -> URL? {
         currentChannel = channel
 
-        let proxyPort = XMHLSProxyServer.shared.port
-
         guard await ensureSession(channelId: channel.id) else {
             dbg("tune: could not establish session")
             return nil
         }
         tokenRefreshTime = currentTimeMs()
 
+        let proxyPort = proxyServer.port
         guard proxyPort != 0 else { return nil }
 
         var components = URLComponents()
@@ -421,18 +448,25 @@ final class XMRadioService {
 
     // MARK: - Token Refresh
 
-    func refreshTokenIfNeeded() async {
-        guard let channel = currentChannel else { return }
-        let elapsed = currentTimeMs() - tokenRefreshTime
-        if elapsed >= 480_000 {
-            let _ = await asyncSession(channelId: channel.id)
-            tokenRefreshTime = currentTimeMs()
-        }
+    @discardableResult
+    func refreshTokenIfNeeded() async -> Bool {
+        guard let channel = currentChannel, userWantsPlayback else { return false }
+        if let refreshTask { return await refreshTask.value }
+        guard currentTimeMs() - tokenRefreshTime >= 480_000 else { return true }
+        let generation = playbackGeneration
+        let task = Task { await self.ensureSession(channelId: channel.id) }
+        refreshTask = task
+        let success = await task.value
+        guard generation == playbackGeneration else { return false }
+        refreshTask = nil
+        if success { tokenRefreshTime = currentTimeMs() }
+        return success
     }
 
     // MARK: - Now Playing
 
     func updateNowPlaying() async {
+        let generation = playbackGeneration
         guard let channel = currentChannel else { return }
 
         let endpoint = nowPlayingLive(channelid: channel.id)
@@ -446,46 +480,48 @@ final class XMRadioService {
         urlReq.timeoutInterval = 60
 
         do {
-            let (data, _) = try await URLSession.shared.data(for: urlReq)
+            let (data, _) = try await httpSession.data(for: urlReq)
             let nplData = try JSONDecoder().decode(NowPlayingLiveStruct.self, from: data)
 
-            let apiChannelId = nplData.moduleListResponse.moduleList.modules.first?.moduleResponse.liveChannelData.channelID
-            dbg("[NPL] API returned channelId=\(apiChannelId ?? "nil")")
-
+            guard !Task.isCancelled, generation == playbackGeneration,
+                  currentChannel?.id == channel.id,
+                  let live = nplData.moduleListResponse.moduleList.modules.first?.moduleResponse.liveChannelData,
+                  live.channelID == nil || live.channelID == channel.id else { return }
             processNPL(data: nplData)
 
-            let markers = nplData.moduleListResponse.moduleList.modules.first?.moduleResponse.liveChannelData.markerLists
-            if let cutLayer = markers?.first(where: { $0.layer == "cut" }) {
-                let songMarker = cutLayer.markers.last(where: { $0.cut?.cutContentType == .song })
-                    ?? cutLayer.markers.last
-                guard let marker = songMarker else {
-                    dbg("[NPL] no markers found")
-                    return
+            // Use the marker covering the audible wall-clock time, including links/promos.
+            let playbackDate = playerController?.player?.currentItem?.currentDate() ?? now()
+            let formatter = ISO8601DateFormatter()
+            func markerDate(_ value: String) -> Date? {
+                if let epoch = Double(value), epoch.isFinite {
+                    return Date(timeIntervalSince1970: epoch > 100_000_000_000 ? epoch / 1000 : epoch)
                 }
-                let artist = marker.cut?.artists.first?.name
-                let song = marker.cut?.title
-                var artURL: String?
-
-                if let a = artist, let s = song, let key = sha256(a + s), let image = MemBase[key] {
-                    artURL = image
-                }
-
-                let prevArtURL = self.nowPlayingArtURL
-                dbg("[NPL] result: \(artist ?? "nil") - \(song ?? "nil") art=\(artURL?.prefix(60) ?? "nil") prev=\(prevArtURL?.prefix(60) ?? "nil") (type: \(marker.cut?.cutContentType?.rawValue ?? "nil"))")
-
-                self.nowPlayingArtist = artist
-                self.nowPlayingSong = song
-                self.nowPlayingArtURL = artURL
-
-                if var ch = self.currentChannel {
-                    ch.artist = artist
-                    ch.song = song
-                    ch.albumArtURL = artURL
-                    self.currentChannel = ch
-                }
-            } else {
-                dbg("[NPL] no cut layer found in markers")
+                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                if let date = formatter.date(from: value) { return date }
+                formatter.formatOptions = [.withInternetDateTime]
+                return formatter.date(from: value)
             }
+            let marker = live.markerLists?.first(where: { $0.layer == "cut" })?.markers
+                .compactMap { marker -> (NowPlayingLiveStruct.Marker, Date)? in
+                    guard let start = markerDate(marker.timestamp.absolute),
+                          start <= playbackDate,
+                          marker.duration > 0,
+                          playbackDate < start.addingTimeInterval(marker.duration) else { return nil }
+                    return (marker, start)
+                }
+                .max(by: { $0.1 < $1.1 })?.0
+            let artist = marker?.cut?.artists.first?.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            let song = marker?.cut?.title?.trimmingCharacters(in: .whitespacesAndNewlines)
+            nowPlayingArtist = artist?.isEmpty == false ? artist : nil
+            nowPlayingSong = song?.isEmpty == false ? song : nil
+            nowPlayingArtURL = nil
+            if let artist = nowPlayingArtist, let song = nowPlayingSong,
+               let key = sha256(artist + song) {
+                nowPlayingArtURL = MemBase[key] ?? nil
+            }
+            currentChannel?.artist = nowPlayingArtist
+            currentChannel?.song = nowPlayingSong
+            currentChannel?.albumArtURL = nowPlayingArtURL
         } catch {
             dbg("[NPL] error: \(error)")
         }
@@ -505,7 +541,7 @@ final class XMRadioService {
 
         var pdtData: [String: Any] = [:]
         do {
-            let (data, _) = try await URLSession.shared.data(for: urlReq)
+            let (data, _) = try await httpSession.data(for: urlReq)
             let decoded = try JSONDecoder().decode(DiscoverChannelList.self, from: data)
             pdtData = processPDT(data: decoded)
         } catch {
@@ -529,8 +565,27 @@ final class XMRadioService {
 
     @discardableResult
     func startPlayback(channel: XMChannel) async -> Bool {
+        cancelPendingPlayback()
+        let generation = playbackGeneration
         currentChannel = channel
         userWantsPlayback = true
+        isPaused = false
+        isBuffering = true
+        playerController?.destruct()
+        playerController = nil
+        nowPlayingManager?.invalidate()
+        nowPlayingManager = nil
+        let task = Task { await self.performPlayback(channel: channel, generation: generation) }
+        playbackTask = task
+        let success = await task.value
+        guard generation == playbackGeneration else { return false }
+        playbackTask = nil
+        if !success { startRecoveryIfNeeded() }
+        return success
+    }
+
+    private func performPlayback(channel: XMChannel, generation: UUID) async -> Bool {
+        guard playbackIsCurrent(generation) else { return false }
         isBuffering = true
 
         UserDefaults.standard.set(channel.number, forKey: "xm_last_channel")
@@ -539,42 +594,45 @@ final class XMRadioService {
         nowPlayingSong = nil
         nowPlayingArtURL = nil
 
-        if !proxyServer.isRunning {
+        if !proxyServer.isRunning || proxyServer.port == 0 {
             do {
                 try await proxyServer.start()
             } catch {
+                guard playbackIsCurrent(generation) else { return false }
                 dbg("proxy start failed: \(error)")
                 isBuffering = false
-                startRecoveryIfNeeded()
                 return false
             }
         }
 
         // Get proxy URL (establishes/refreshes the session, re-logging-in if needed)
+        guard playbackIsCurrent(generation) else { return false }
         guard let proxyURL = await tune(channel: channel) else {
+            guard playbackIsCurrent(generation) else { return false }
             dbg("failed to get proxy URL")
             isBuffering = false
-            startRecoveryIfNeeded()
             return false
         }
 
+        guard playbackIsCurrent(generation), playerController?.isSuspended != true else { return false }
         playerController?.destruct()
         nowPlayingManager?.invalidate()
 
         let controller = AVPlayerController(options: PlayerOptions())
         playerController = controller
 
-        controller.onPropertyChange = { [weak self] property, value in
+        controller.onPropertyChange = { [weak self, weak controller] property, value in
             Task { @MainActor in
+                guard let self, self.playbackIsCurrent(generation), self.playerController === controller else { return }
                 switch property {
                 case .pause:
                     if let paused = value as? Bool {
-                        self?.isPaused = paused
-                        self?.nowPlayingManager?.updatePlaybackState(rate: paused ? 0.0 : 1.0)
+                        self.isPaused = paused
+                        self.nowPlayingManager?.updatePlaybackState(rate: paused ? 0.0 : 1.0)
                     }
                 case .pausedForCache:
                     if let buffering = value as? Bool {
-                        self?.isBuffering = buffering
+                        self.isBuffering = buffering
                     }
                 default:
                     break
@@ -582,31 +640,35 @@ final class XMRadioService {
             }
         }
 
-        controller.onPlaybackEnded = { [weak self] in
+        controller.onPlaybackEnded = { [weak self, weak controller] in
             writeDebug("[RadioService] playback ended")
             Task { @MainActor in
-                await self?.handlePlaybackInterruption()
+                guard let self, self.playbackIsCurrent(generation), self.playerController === controller else { return }
+                self.startRecoveryIfNeeded()
             }
         }
 
-        controller.onPlaybackFailed = { [weak self] error in
+        controller.onPlaybackFailed = { [weak self, weak controller] error in
             writeDebug("[RadioService] playback FAILED: \(error?.localizedDescription ?? "unknown")")
             Task { @MainActor in
-                self?.isBuffering = false
-                await self?.handlePlaybackInterruption()
+                guard let self, self.playbackIsCurrent(generation), self.playerController === controller else { return }
+                self.isBuffering = false
+                self.startRecoveryIfNeeded()
             }
         }
 
-        controller.onPlaybackStalled = { [weak self] in
+        controller.onPlaybackStalled = { [weak self, weak controller] in
             writeDebug("[RadioService] playback STALLED, reconnecting")
             Task { @MainActor in
-                await self?.handlePlaybackInterruption()
+                guard let self, self.playbackIsCurrent(generation), self.playerController === controller else { return }
+                self.startRecoveryIfNeeded()
             }
         }
 
-        controller.onMediaLoaded = { [weak self] in
+        controller.onMediaLoaded = { [weak self, weak controller] in
             Task { @MainActor in
-                self?.isBuffering = false
+                guard let self, self.playbackIsCurrent(generation), self.playerController === controller else { return }
+                self.isBuffering = false
             }
         }
 
@@ -621,6 +683,13 @@ final class XMRadioService {
         }
         manager.onPreviousChannel = { [weak self] in
             Task { @MainActor in await self?.previousChannel() }
+        }
+
+        manager.onPlay = { [weak self] in self?.resumePlayback() }
+        manager.onPause = { [weak self] in self?.pausePlayback() }
+        controller.onPauseRequested = { [weak self, weak controller] in
+            guard let self, self.playerController === controller else { return }
+            self.pausePlayback()
         }
 
         dbg("playing \(proxyURL.absoluteString)")
@@ -649,31 +718,47 @@ final class XMRadioService {
         return true
     }
 
-    /// Kick off the backoff recovery loop for a direct-call failure (e.g. resume
-    /// at launch). No-op if a loop is already running — that loop drives its own
-    /// retries off startPlayback's return value.
-    private func startRecoveryIfNeeded() {
-        guard !isReconnecting, userWantsPlayback else { return }
-        Task { @MainActor in await handlePlaybackInterruption() }
+    private func playbackIsCurrent(_ generation: UUID) -> Bool {
+        !Task.isCancelled && generation == playbackGeneration && userWantsPlayback
+    }
+
+    private func cancelPendingPlayback() {
+        playbackGeneration = UUID()
+        playbackTask?.cancel()
+        playbackTask = nil
+        recoveryTask?.cancel()
+        recoveryTask = nil
+        refreshTask?.cancel()
+        refreshTask = nil
+        pdtTimer?.cancel()
+        pdtTimer = nil
+        tokenTimer?.cancel()
+        tokenTimer = nil
+        isReconnecting = false
+    }
+
+    func pausePlayback() {
+        userWantsPlayback = false
+        cancelPendingPlayback()
+        playerController?.pause()
+        isPaused = true
+        isBuffering = false
+        nowPlayingManager?.updatePlaybackState(rate: 0)
+    }
+
+    func resumePlayback() {
+        guard !userWantsPlayback, let channel = currentChannel else { return }
+        // Record intent immediately, so repeated remote play commands are idempotent.
+        userWantsPlayback = true
+        let generation = playbackGeneration
+        Task { [weak self] in
+            guard let self, self.playbackIsCurrent(generation) else { return }
+            await self.startPlayback(channel: channel)
+        }
     }
 
     func togglePlayback() {
-        guard let controller = playerController else { return }
-        // Ask the controller for the user's intent, not the player's rate: rate is 0
-        // while stalled too, so a rate check turns the pause button into a restart.
-        if controller.isPaused {
-            // A recovery loop already owns restarting — don't race it.
-            guard !isReconnecting else { return }
-            // For live streams, if paused the segments may have expired.
-            // Restart from the live edge instead of trying to resume.
-            userWantsPlayback = true
-            if let channel = currentChannel {
-                Task { await startPlayback(channel: channel) }
-            }
-        } else {
-            userWantsPlayback = false
-            controller.pause()
-        }
+        if userWantsPlayback { pausePlayback() } else { resumePlayback() }
     }
 
     func nextChannel() async {
@@ -696,6 +781,7 @@ final class XMRadioService {
             while !Task.isCancelled {
                 // Fetch immediately on first pass, then every 12s.
                 await updateNowPlaying()
+                guard !Task.isCancelled else { return }
 
                 if let channel = currentChannel {
                     let artURLString = nowPlayingArtURL ?? channel.largeImageURL
@@ -718,7 +804,7 @@ final class XMRadioService {
         tokenTimer?.cancel()
         tokenTimer = Task {
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 300_000_000_000)
+                try? await Task.sleep(nanoseconds: 30_000_000_000)
                 guard !Task.isCancelled else { break }
                 await refreshTokenIfNeeded()
             }
@@ -727,61 +813,43 @@ final class XMRadioService {
 
     // MARK: - Session Recovery
 
-    /// Re-establishes playback after a failure or stall. Retries indefinitely with
-    /// exponential backoff (capped at 30s) for as long as the user still intends to
-    /// be playing — a transient network drop recovers on its own once connectivity
-    /// returns, rather than silently giving up after a few tries.
-    private func handlePlaybackInterruption() async {
-        // Only one recovery loop at a time, and only while the user wants playback.
-        guard !isReconnecting, userWantsPlayback, currentChannel != nil else { return }
-
+    private func startRecoveryIfNeeded() {
+        guard recoveryTask == nil, userWantsPlayback, currentChannel != nil,
+              playerController?.isSuspended != true else { return }
+        let generation = playbackGeneration
         isReconnecting = true
-        defer { isReconnecting = false }
-
-        var attempt = 0
-        while userWantsPlayback, currentChannel != nil {
-            attempt += 1
-            // Backoff: 2, 4, 8, 16, 30, 30, … seconds.
-            let delaySeconds = min(30, 1 << min(attempt, 5))
-            dbg("reconnect attempt \(attempt), waiting \(delaySeconds)s — re-establishing session")
-            try? await Task.sleep(nanoseconds: UInt64(delaySeconds) * 1_000_000_000)
-
-            guard userWantsPlayback, let channel = currentChannel else { break }
-
-            // startPlayback establishes the session (re-logging-in if needed) and
-            // restarts the stream from the live edge. Retry until it succeeds.
-            if await startPlayback(channel: channel) {
-                return
+        recoveryTask = Task { [weak self] in
+            guard let self else { return }
+            defer {
+                if generation == self.playbackGeneration {
+                    self.isReconnecting = false
+                    self.recoveryTask = nil
+                }
             }
-            dbg("reconnect attempt \(attempt) failed, will retry")
+            var attempt = 0
+            while self.playbackIsCurrent(generation) {
+                attempt += 1
+                let delay = min(30, 1 << min(attempt, 5))
+                do { try await Task.sleep(for: .seconds(delay)) } catch { return }
+                guard self.playbackIsCurrent(generation), let channel = self.currentChannel else { return }
+                if self.playerController?.isSuspended == true { continue }
+                if await self.performPlayback(channel: channel, generation: generation) { return }
+            }
         }
     }
 
     func refreshSessionOnForeground() async {
-        guard let channel = currentChannel else { return }
-        dbg("foreground: refreshing session for \(channel.name)")
-
-        let sessionOk = await ensureSession(channelId: channel.id)
-        tokenRefreshTime = currentTimeMs()
-        dbg("foreground session refresh: \(sessionOk)")
-
-        if let controller = playerController {
-            let rate = controller.player?.rate ?? 0
-            let item = controller.player?.currentItem
-            let status = item?.status.rawValue ?? -1
-            let bufferEmpty = item?.isPlaybackBufferEmpty ?? false
-            dbg("foreground: player rate=\(rate) status=\(status) bufferEmpty=\(bufferEmpty)")
-
-            // With automaticallyWaitsToMinimizeStalling off, a dead stream keeps its rate
-            // at 1, so rate alone misses it — an empty buffer is what says "no data".
-            let isDead = rate == 0 || bufferEmpty
-
-            // Player exists but isn't playing and isn't still loading — restart,
-            // unless the user paused or a recovery loop is already running.
-            if isDead && status != 0 && userWantsPlayback && !isReconnecting {
-                dbg("foreground: player stalled, restarting playback")
-                await startPlayback(channel: channel)
-            }
+        guard userWantsPlayback, currentChannel != nil,
+              playbackTask == nil, recoveryTask == nil else { return }
+        let generation = playbackGeneration
+        await refreshTokenIfNeeded()
+        guard playbackIsCurrent(generation), playbackTask == nil,
+              playerController?.isSuspended != true else { return }
+        if let player = playerController?.player,
+           player.currentItem?.status == .failed || player.currentItem?.isPlaybackBufferEmpty == true {
+            startRecoveryIfNeeded()
+        } else if playerController == nil {
+            startRecoveryIfNeeded()
         }
     }
 
@@ -800,6 +868,12 @@ final class XMRadioService {
     // MARK: - Sign Out
 
     func signOut() {
+        pausePlayback()
+        playerController?.destruct()
+        playerController = nil
+        nowPlayingManager?.invalidate()
+        nowPlayingManager = nil
+        proxyServer.stop()
         status = .signedOut
         userWantsPlayback = false
         channels = []
@@ -841,6 +915,6 @@ final class XMRadioService {
     // MARK: - Helpers
 
     private func currentTimeMs() -> Int {
-        Int(Date().timeIntervalSince1970 * 1000)
+        Int(now().timeIntervalSince1970 * 1000)
     }
 }

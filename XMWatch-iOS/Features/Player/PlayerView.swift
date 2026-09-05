@@ -175,7 +175,7 @@ struct PlayerView: View {
             Button {
                 radioService.togglePlayback()
             } label: {
-                Image(systemName: radioService.isPaused ? "play.circle.fill" : "pause.circle.fill")
+                Image(systemName: !radioService.userWantsPlayback ? "play.circle.fill" : "pause.circle.fill")
                     .font(.system(size: 56))
             }
 
@@ -188,7 +188,5 @@ struct PlayerView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.primary)
-        .opacity(radioService.isBuffering ? 0.4 : 1.0)
-        .disabled(radioService.isBuffering)
     }
 }

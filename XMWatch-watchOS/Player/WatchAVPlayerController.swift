@@ -34,9 +34,10 @@ final class WatchAVPlayerController: PlayerCoordinating {
     private var isPausedByUser = false
     private var isBuffering = false
     private var shouldResumeAfterInterruption = false
-    /// We paused because the output route went away (headphones pulled). Set so that when
-    /// that device comes back we resume, instead of leaving a silent, paused player.
-    private var pausedByRouteLoss = false
+    private(set) var isSuspended = false
+    private var audioSessionReady = false
+    private var activationGeneration = UUID()
+    var onPauseRequested: (() -> Void)?
     var onPropertyChange: ((PlayerProperty, Any?) -> Void)?
     var onPlaybackEnded: (() -> Void)?
     var onPlaybackFailed: ((Error?) -> Void)?
@@ -51,21 +52,34 @@ final class WatchAVPlayerController: PlayerCoordinating {
     init(options: PlayerOptions) {}
 
     private func configureAudioSession() {
+        let generation = UUID()
+        activationGeneration = generation
+        audioSessionReady = false
         let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .moviePlayback, policy: .longFormAudio)
-        session.activate(options: []) { activated, error in
-            if let error {
-                writeDebug("[WatchAVPlayer] Audio session activation failed: \(error)")
+        do {
+            try session.setCategory(.playback, mode: .default, policy: .longFormAudio)
+        } catch {
+            onPlaybackFailed?(error)
+            return
+        }
+        session.activate(options: []) { [weak self] activated, error in
+            Task { @MainActor in
+                guard let self, generation == self.activationGeneration,
+                      !self.isPausedByUser, !self.isSuspended, self.player != nil else { return }
+                guard activated, error == nil else {
+                    self.onPlaybackFailed?(error)
+                    return
+                }
+                self.audioSessionReady = true
+                self.player?.play()
             }
-            writeDebug("[WatchAVPlayer] Audio session activated: \(activated)")
         }
     }
 
     func play(_ url: URL) {
         writeDebug("[WatchAVPlayer] play url=\(url.absoluteString)")
         isPausedByUser = false
-        pausedByRouteLoss = false
-        configureAudioSession()
+        isSuspended = false
         let asset = AVURLAsset(url: url)
         let item = AVPlayerItem(asset: asset)
         audioSelectionGroup = nil
@@ -74,8 +88,8 @@ final class WatchAVPlayerController: PlayerCoordinating {
         player?.audiovisualBackgroundPlaybackPolicy = .continuesIfPossible
         player?.automaticallyWaitsToMinimizeStalling = false
         setupObservers()
-        player?.play()
-        writeDebug("[WatchAVPlayer] player.play() called, rate=\(player?.rate ?? -1), timeControlStatus=\(player?.timeControlStatus.rawValue ?? -1)")
+        configureAudioSession()
+        writeDebug("[WatchAVPlayer] playback requested, rate=\(player?.rate ?? -1), timeControlStatus=\(player?.timeControlStatus.rawValue ?? -1)")
     }
 
     /// Periodically log player state for debugging
@@ -108,8 +122,9 @@ final class WatchAVPlayerController: PlayerCoordinating {
     }
 
     func pause() {
+        activationGeneration = UUID()
+        shouldResumeAfterInterruption = false
         isPausedByUser = true
-        pausedByRouteLoss = false
         // A stall stops mattering once the user pauses: drop the pending escalation so
         // recovery can't reconnect and resume playback behind their back.
         stallEscalationTask?.cancel()
@@ -120,16 +135,8 @@ final class WatchAVPlayerController: PlayerCoordinating {
 
     func resume() {
         isPausedByUser = false
-        pausedByRouteLoss = false
-        // An interruption or route change can deactivate the shared session; playing into
-        // an inactive session is silent on watchOS. Re-activate, then play in the callback
-        // (an already-active session calls back immediately).
-        AVAudioSession.sharedInstance().activate(options: []) { [weak self] _, _ in
-            Task { @MainActor in
-                guard let self, !self.isPausedByUser else { return }
-                self.player?.play()
-            }
-        }
+        isSuspended = false
+        configureAudioSession()
     }
 
     func seek(to time: Double) {
@@ -228,6 +235,15 @@ final class WatchAVPlayerController: PlayerCoordinating {
     }
 
     func destruct() {
+        activationGeneration = UUID()
+        isPausedByUser = true
+        audioSessionReady = false
+        onPropertyChange = nil
+        onPlaybackEnded = nil
+        onPlaybackFailed = nil
+        onPlaybackStalled = nil
+        onMediaLoaded = nil
+        onPauseRequested = nil
         removeObservers()
         player?.pause()
         player = nil
@@ -263,7 +279,7 @@ final class WatchAVPlayerController: PlayerCoordinating {
     /// timer. If playback makes forward progress the escalation is cancelled;
     /// if it doesn't, we escalate to a full reconnect.
     private func handleStall() {
-        guard let player, !isPausedByUser else { return }
+        guard let player, !isPausedByUser, !isSuspended, audioSessionReady else { return }
         writeDebug("[WatchAVPlayer] stall detected, nudging playback")
         setBuffering(true)
         player.play()
@@ -277,7 +293,7 @@ final class WatchAVPlayerController: PlayerCoordinating {
             guard let self, !Task.isCancelled else { return }
             // Clear the slot before any other exit, or a later stall can never re-arm.
             self.stallEscalationTask = nil
-            guard !self.isPausedByUser else { return }
+            guard !self.isPausedByUser, !self.isSuspended else { return }
             // `rate` is a useless signal here: with automaticallyWaitsToMinimizeStalling
             // off, AVPlayer leaves it at 1 on a dead stream, and the nudge above sets it
             // to 1 regardless. Only the clock moving forward proves the stream recovered.
@@ -320,7 +336,7 @@ final class WatchAVPlayerController: PlayerCoordinating {
                     }
                     // Resume playback if the player stalled waiting for data — but never
                     // override a pause the user asked for while the item was loading.
-                    if self?.player?.rate == 0, self?.isPausedByUser == false {
+                    if self?.player?.rate == 0, self?.isPausedByUser == false, self?.audioSessionReady == true, self?.isSuspended == false {
                         writeDebug("[WatchAVPlayer] resuming playback after readyToPlay")
                         self?.player?.play()
                     }
@@ -357,7 +373,7 @@ final class WatchAVPlayerController: PlayerCoordinating {
                 self.setBuffering(false)
                 // Only resume a player the user didn't deliberately pause: pausing during
                 // a stall is exactly when this fires, and it must not undo the pause.
-                if self.player?.rate == 0, !self.isPausedByUser {
+                if self.player?.rate == 0, !self.isPausedByUser, self.audioSessionReady, !self.isSuspended {
                     writeDebug("[WatchAVPlayer] buffer recovered, resuming")
                     self.player?.play()
                 }
@@ -390,6 +406,12 @@ final class WatchAVPlayerController: PlayerCoordinating {
         ) { [weak self] _ in
             Task { @MainActor in
                 guard let self else { return }
+                self.isSuspended = true
+                self.audioSessionReady = false
+                self.activationGeneration = UUID()
+                self.stallEscalationTask?.cancel()
+                self.stallEscalationTask = nil
+                self.setBuffering(false)
                 self.shouldResumeAfterInterruption =
                     self.player != nil && !self.isPausedByUser
                 if self.shouldResumeAfterInterruption {
@@ -412,8 +434,10 @@ final class WatchAVPlayerController: PlayerCoordinating {
                 if self.shouldResumeAfterInterruption,
                    recommendation == .shouldResume,
                    !self.isPausedByUser {
+                    self.isSuspended = false
                     self.configureAudioSession()
-                    self.player?.play()
+                } else if self.shouldResumeAfterInterruption {
+                    self.onPauseRequested?()
                 }
                 self.shouldResumeAfterInterruption = false
             }
@@ -428,22 +452,10 @@ final class WatchAVPlayerController: PlayerCoordinating {
             let reason = AVAudioSession.RouteChangeReason(rawValue: rawReason ?? 0)
             Task { @MainActor in
                 guard let self, self.player != nil else { return }
-                switch reason {
-                case .oldDeviceUnavailable:
-                    // Headphones/Bluetooth output vanished — never fall back to the speaker.
-                    // Arm a reconnect-resume so plugging back in continues playback.
-                    let wasPlaying = !self.isPausedByUser
+                if reason == .oldDeviceUnavailable {
+                    // Route loss is a real pause; recovery must respect it too.
                     self.pause()
-                    self.pausedByRouteLoss = wasPlaying
-                case .newDeviceAvailable:
-                    // The output came back (headphones reconnected). Resume only if the
-                    // route loss is what paused us.
-                    if self.pausedByRouteLoss {
-                        self.pausedByRouteLoss = false
-                        self.resume()
-                    }
-                default:
-                    break
+                    self.onPauseRequested?()
                 }
             }
         })
@@ -455,7 +467,7 @@ final class WatchAVPlayerController: PlayerCoordinating {
         ) { [weak self] _ in
             Task { @MainActor in
                 guard let self, self.player != nil else { return }
-                self.configureAudioSession()
+                guard !self.isPausedByUser, !self.isSuspended else { return }
                 self.onPlaybackStalled?()
             }
         })

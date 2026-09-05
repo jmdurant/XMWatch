@@ -1,0 +1,40 @@
+name: XMWatchRegression
+options:
+  deploymentTarget:
+    macOS: "14.0"
+packages:
+  StarPlayrRadioKit:
+    path: ../StarPlayrRadioKit
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    GENERATE_INFOPLIST_FILE: YES
+    CODE_SIGNING_ALLOWED: NO
+targetTemplates:
+  PlaybackTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Playback
+      - path: ../XMWatch-iOS/Models/XMChannel.swift
+      - path: ../XMWatch-iOS/Player/PlayerOptions.swift
+      - path: ../XMWatch-iOS/Player/PlayerProperty.swift
+    dependencies:
+      - package: StarPlayrRadioKit
+targets:
+  PhonePlaybackTests:
+    templates: [PlaybackTests]
+    sources:
+      - path: ../XMWatch-iOS/Services/XMRadioService.swift
+  WatchPlaybackTests:
+    templates: [PlaybackTests]
+    sources:
+      - path: ../XMWatch-watchOS/Services/XMRadioService.swift
+schemes:
+  PlaybackRegression:
+    build:
+      targets:
+        PhonePlaybackTests: [test]
+        WatchPlaybackTests: [test]
+    test:
+      targets: [PhonePlaybackTests, WatchPlaybackTests]

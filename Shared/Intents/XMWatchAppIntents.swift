@@ -351,16 +351,13 @@ enum XMRadioCatalog {
 
     static func pause() {
         let service = XMRadioService.shared
-        guard service.currentChannel != nil, !service.isPaused else { return }
-        service.togglePlayback()
+        service.pausePlayback()
     }
 
     static func resume() async -> Bool {
         let service = XMRadioService.shared
         if service.currentChannel != nil {
-            if service.isPaused {
-                service.togglePlayback()
-            }
+            service.resumePlayback()
             return true
         }
         _ = await channels()

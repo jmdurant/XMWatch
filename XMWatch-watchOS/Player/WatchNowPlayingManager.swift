@@ -8,6 +8,10 @@ final class WatchNowPlayingManager {
     private let commandCenter = MPRemoteCommandCenter.shared()
     private let infoCenter = MPNowPlayingInfoCenter.default()
 
+    var onPlay: (() -> Void)?
+    var onPause: (() -> Void)?
+    private var artworkTask: Task<Void, Never>?
+    private var artworkGeneration = UUID()
     var onTogglePlayback: (() -> Void)?
     var onNextChannel: (() -> Void)?
     var onPreviousChannel: (() -> Void)?
@@ -23,13 +27,13 @@ final class WatchNowPlayingManager {
     private func setupRemoteCommands() {
         commandCenter.playCommand.isEnabled = true
         commandCenter.playCommand.addTarget { [weak self] _ in
-            Task { @MainActor in self?.onTogglePlayback?() }
+            Task { @MainActor in self?.onPlay?() }
             return .success
         }
 
         commandCenter.pauseCommand.isEnabled = true
         commandCenter.pauseCommand.addTarget { [weak self] _ in
-            Task { @MainActor in self?.coordinator?.pause() }
+            Task { @MainActor in self?.onPause?() }
             return .success
         }
 
@@ -90,16 +94,29 @@ final class WatchNowPlayingManager {
         infoCenter.nowPlayingInfo = info
         XMRadioEntityDonations.update(with: channel)
 
-        if let artworkURL, artworkURL != lastArtworkURL {
+        if artworkURL != lastArtworkURL {
+            artworkTask?.cancel()
+            artworkTask = nil
+            artworkGeneration = UUID()
             lastArtworkURL = artworkURL
+            var cleared = infoCenter.nowPlayingInfo ?? [:]
+            cleared.removeValue(forKey: MPMediaItemPropertyArtwork)
+            infoCenter.nowPlayingInfo = cleared
+        }
+        if let artworkURL, artworkTask == nil,
+           infoCenter.nowPlayingInfo?[MPMediaItemPropertyArtwork] == nil {
             loadArtwork(from: artworkURL)
         }
     }
 
     private func loadArtwork(from url: URL) {
-        Task {
+        let generation = artworkGeneration
+        artworkTask = Task {
+            defer { if generation == self.artworkGeneration { self.artworkTask = nil } }
             guard let (data, _) = try? await URLSession.shared.data(from: url),
-                  let original = UIImage(data: data) else {
+                  let original = UIImage(data: data),
+                  !Task.isCancelled, generation == self.artworkGeneration,
+                  self.lastArtworkURL == url else {
                 return
             }
 
@@ -130,6 +147,10 @@ final class WatchNowPlayingManager {
     // MARK: - Teardown
 
     func invalidate() {
+        artworkGeneration = UUID()
+        artworkTask?.cancel()
+        artworkTask = nil
+        lastArtworkURL = nil
         removeRemoteCommands()
         infoCenter.nowPlayingInfo = nil
     }
