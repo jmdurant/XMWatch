@@ -1,5 +1,6 @@
 import Foundation
 import XCTest
+import StarPlayrRadioKit
 
 @MainActor
 final class PlaybackRegressionTests: XCTestCase {
@@ -11,6 +12,8 @@ final class PlaybackRegressionTests: XCTestCase {
         configuration.protocolClasses = [ControlledURLProtocol.self]
         service = XMRadioService(httpSession: URLSession(configuration: configuration), now: { [unowned self] in self.clock })
         AVPlayerController.playedURLs = []
+        AVPlayerController.onPlay = nil
+        UserDefaults.standard.removeObject(forKey: "xm_playback_device")
         ControlledURLProtocol.handler = { request in
             if request.request.httpMethod == "POST" { request.respond(Self.sessionResponse) }
             else { request.respond([:]) }
@@ -18,6 +21,7 @@ final class PlaybackRegressionTests: XCTestCase {
     }
 
     override func tearDown() async throws {
+        AVPlayerController.onPlay = nil
         service.signOut()
         ControlledURLProtocol.handler = nil
         service = nil
@@ -153,6 +157,14 @@ final class PlaybackRegressionTests: XCTestCase {
         }
         await service.updateNowPlaying()
         XCTAssertEqual(service.nowPlayingSong, "Current link")
+        XCTAssertEqual(service.metadataPollInterval, 8)
+        clock.addTimeInterval(19)
+        await service.updateNowPlaying()
+        XCTAssertEqual(service.metadataPollInterval, 1, "Poll at the approaching boundary")
+        clock.addTimeInterval(2)
+        await service.updateNowPlaying()
+        XCTAssertNil(service.nowPlayingSong)
+        XCTAssertEqual(service.metadataPollInterval, 2, "Retry promptly while waiting for the next cut")
         clock.addTimeInterval(500)
         await service.updateNowPlaying()
         XCTAssertNil(service.nowPlayingSong)
@@ -218,6 +230,122 @@ final class PlaybackRegressionTests: XCTestCase {
         let result = await service.refreshTokenIfNeeded()
         XCTAssertFalse(result)
     }
+
+    func testStartupWaitsForConfigurationAndResumesOnlyOnce() async {
+        UserDefaults.standard.set("test-account", forKey: "gupid")
+        let saved: [String: Any] = [
+            "1": ["channelId": "channel1", "channelNumber": "1", "name": "One"],
+            "2": ["channelId": "channel2", "channelNumber": "2", "name": "Two"]
+        ]
+        UserDefaults.standard.set(saved, forKey: "channels")
+        UserDefaults.standard.set("1", forKey: "xm_last_channel")
+        UserDefaults.standard.set(true, forKey: "xm_resume_last_channel")
+        defer {
+            UserDefaults.standard.removeObject(forKey: "xm_last_channel")
+            UserDefaults.standard.removeObject(forKey: "xm_resume_last_channel")
+        }
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [ControlledURLProtocol.self]
+        service = XMRadioService(httpSession: URLSession(configuration: configuration),
+            configureEnvironment: { _ in userX.channels = saved })
+        XCTAssertNotEqual(service.status, .ready)
+        await service.resumeOnceAfterConfiguration()
+        XCTAssertTrue(AVPlayerController.playedURLs.isEmpty)
+        await service.configure(region: "US")
+        XCTAssertEqual(service.channels.count, 2)
+        await service.resumeOnceAfterConfiguration()
+        XCTAssertEqual(AVPlayerController.playedURLs.count, 1)
+        service.pausePlayback()
+        await service.resumeOnceAfterConfiguration()
+        XCTAssertEqual(AVPlayerController.playedURLs.count, 1)
+        XCTAssertFalse(service.userWantsPlayback)
+    }
+
+    func testStreamFailuresKeepBackoffUntilPlaybackMakesProgress() async {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [ControlledURLProtocol.self]
+        var delays: [Int] = []
+        service = XMRadioService(httpSession: URLSession(configuration: configuration), recoveryWait: { delay in
+            delays.append(delay)
+            try await Task.sleep(for: .milliseconds(5))
+        })
+        let recovered = expectation(description: "fourth player makes progress")
+        AVPlayerController.onPlay = { controller in
+            let attempt = AVPlayerController.playedURLs.count
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(10))
+                if attempt < 4 { controller.onPlaybackFailed?(nil) }
+                else { controller.onPlaybackProgress?(); recovered.fulfill() }
+            }
+        }
+        _ = await service.startPlayback(channel: channel("1"))
+        await fulfillment(of: [recovered], timeout: 3)
+        XCTAssertEqual(delays, [2, 4, 8])
+        XCTAssertFalse(service.isReconnecting)
+        let retried = expectation(description: "retry after healthy playback")
+        AVPlayerController.onPlay = { _ in retried.fulfill() }
+        service.playerController?.onPlaybackFailed?(nil)
+        await fulfillment(of: [retried], timeout: 3)
+        XCTAssertEqual(delays, [2, 4, 8, 2])
+        XCTAssertTrue(service.isReconnecting, "Creating a player alone is not recovery")
+        XCTAssertEqual((1...7).map { XMRadioService.recoveryDelay(attempt: $0) }, [2, 4, 8, 16, 30, 30, 30])
+    }
+
+    func testPhoneSnapshotReplacesMetadataAndRejectsOlderContexts() {
+        var inbox = PhonePlaybackInbox()
+        let playing = PhonePlaybackState(updatedAt: clock, channelID: "1", channelName: "One",
+            title: "Song", artist: "Artist", wantsPlayback: true, isPaused: false)
+        inbox.accept(playing.payload)
+        XCTAssertEqual(inbox.state, playing)
+        let stopped = PhonePlaybackState(updatedAt: clock.addingTimeInterval(1))
+        inbox.accept(stopped.payload)
+        inbox.accept(playing.payload)
+        XCTAssertEqual(inbox.state, stopped)
+        XCTAssertNil(inbox.state?.title)
+        XCTAssertFalse(inbox.state!.wantsPlayback)
+        inbox.accept(["playback": Data("bad payload".utf8)])
+        XCTAssertEqual(inbox.state, stopped)
+    }
+
+    #if WATCH_SERVICE_TESTS
+    func testSwitchingToPhoneCancelsPendingWatchTune() async {
+        let received = expectation(description: "watch tune started")
+        ControlledURLProtocol.handler = { _ in received.fulfill() }
+        let tune = Task { await service.startPlayback(channel: channel("1")) }
+        await fulfillment(of: [received], timeout: 2)
+        UserDefaults.standard.set("phone", forKey: "xm_playback_device")
+        service.stopForPhoneMode()
+        let result = await tune.value
+        XCTAssertFalse(result)
+        XCTAssertFalse(service.userWantsPlayback)
+        XCTAssertNil(service.playerController)
+        XCTAssertNil(service.nowPlayingManager)
+        XCTAssertFalse(XMHLSProxyServer.shared.isRunning)
+        XCTAssertTrue(AVPlayerController.playedURLs.isEmpty)
+        XCTAssertEqual(UserDefaults.standard.string(forKey: "xm_playback_device"), "phone")
+    }
+
+    func testPhoneModeDoesNotAutostartSavedWatchChannel() async {
+        let saved: [String: Any] = [
+            "1": ["channelId": "channel1", "channelNumber": "1", "name": "One"],
+            "2": ["channelId": "channel2", "channelNumber": "2", "name": "Two"]
+        ]
+        UserDefaults.standard.set("test", forKey: "gupid")
+        UserDefaults.standard.set(saved, forKey: "channels")
+        UserDefaults.standard.set("1", forKey: "xm_last_channel")
+        UserDefaults.standard.set(true, forKey: "xm_resume_last_channel")
+        UserDefaults.standard.set("phone", forKey: "xm_playback_device")
+        defer {
+            UserDefaults.standard.removeObject(forKey: "xm_last_channel")
+            UserDefaults.standard.removeObject(forKey: "xm_resume_last_channel")
+        }
+        service = XMRadioService(configureEnvironment: { _ in userX.channels = saved })
+        await service.configure(region: "US")
+        await service.resumeOnceAfterConfiguration()
+        XCTAssertTrue(AVPlayerController.playedURLs.isEmpty)
+        XCTAssertFalse(service.userWantsPlayback)
+    }
+    #endif
 
     private static func metadata(channelID: String, markers: [[String: Any]]) -> [String: Any] {
         ["ModuleListResponse": ["messages": [], "status": 1, "moduleList": ["modules": [[

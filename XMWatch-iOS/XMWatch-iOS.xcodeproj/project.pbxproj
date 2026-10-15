@@ -10,6 +10,7 @@
 		0189A7E02097BFA2C6A1CB73 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 531FC33F8C4C7B8640D004C8 /* MainTabView.swift */; };
 		05843D3C81B60F03FA22D650 /* XMChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B76A55FF54307BAB3A5521F /* XMChannel.swift */; };
 		0C08CD28C5D05825422E160D /* XMWatchWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D698DB21997881934D377E8C /* XMWatchWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		0F9F83F0602160F149D238D0 /* PlaybackConnectivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8229EFD4AC8E1F6D696F02 /* PlaybackConnectivity.swift */; };
 		159B9DCB2E061B0373093CF5 /* XMChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CED07E8525AD8BA2E3E33C6D /* XMChannel.swift */; };
 		1791C59534EF0094F12E96F0 /* AVPlayerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0841CECD306BBD3D62A113F0 /* AVPlayerController.swift */; };
 		1FCA421824C931733E9E6BDB /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6F82409F5398B70BB452B3 /* PlayerView.swift */; };
@@ -32,6 +33,7 @@
 		9505E35CB199210FD1E113B8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3372D6160BB916AD20710233 /* ContentView.swift */; };
 		97A3187A87FED8657CA5B88C /* PlayerCoordinating.swift in Sources */ = {isa = PBXBuildFile; fileRef = B617EF3CB4DDD6ED899B99B6 /* PlayerCoordinating.swift */; };
 		981F4560E4B6E38296208240 /* XMRadioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA58202CE3EC6C4C4DCFF152 /* XMRadioService.swift */; };
+		9B06D2616DA85B88C6C33416 /* PhonePlaybackState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD5D5B17440813560EC82F /* PhonePlaybackState.swift */; };
 		A23E7599F56004B93D2FD49D /* XMChannelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BFCCDE12EB7D501279B48DC /* XMChannelsView.swift */; };
 		A612D7DC3F90D632794C3BFB /* PlayerOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D57D165F06870887641F82D6 /* PlayerOptions.swift */; };
 		A784121654851647D1B188EF /* XMTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9AE19B94BEA5CBA860301E9 /* XMTabView.swift */; };
@@ -43,6 +45,7 @@
 		B9397062C120AB2B788FF058 /* PlayerCoordinating.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DF1CAD82D9D7694C52C7E3B /* PlayerCoordinating.swift */; };
 		BC3F5A1114B237110A9A86BC /* XMSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B42ECB72B27EB155F0F40B4 /* XMSettingsView.swift */; };
 		BFCCBD41EA079B236459186E /* XMSignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BED04736030E2CAD801EFEC2 /* XMSignInView.swift */; };
+		CBEC2E66ACE08F74A9CF3564 /* PhonePlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C2B240C793D14291C24BA4 /* PhonePlayerView.swift */; };
 		CE59E2372DAFBDD4E51C82FC /* XMPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B686D59DC876C7941F6ACCD8 /* XMPlayerView.swift */; };
 		D968CA71820A0E7AA6F0EFCD /* ChannelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79096C73FD534A245819E72C /* ChannelsView.swift */; };
 		DB6925EADB587EAD1103C3A7 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4B5C460025B0B02A2D0CE1C /* SettingsView.swift */; };
@@ -50,6 +53,8 @@
 		DEF48DE03940488C745DA7F6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1917776153125FB22BC88377 /* Assets.xcassets */; };
 		E5CB9ABAAF58CF614CAD8032 /* XMRadioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12E41F91D898D83592C7CA3 /* XMRadioService.swift */; };
 		EBC751E90081CF91347AF46F /* XMWatchAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB700136DBD3131A25FAB4E2 /* XMWatchAppIntents.swift */; };
+		EEF75B16B9C26071AAB23817 /* PhonePlaybackState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03AD5D5B17440813560EC82F /* PhonePlaybackState.swift */; };
+		FC08A6B4CC3CF40AE83B4309 /* PlaybackConnectivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD8229EFD4AC8E1F6D696F02 /* PlaybackConnectivity.swift */; };
 		FFDA6F538F31D4C395DF64E0 /* XMHLSProxyServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BA9D9B65B44E700E6A98D4 /* XMHLSProxyServer.swift */; };
 /* End PBXBuildFile section */
 
@@ -97,6 +102,7 @@
 
 /* Begin PBXFileReference section */
 		02E59367288C9955CE1F5EE0 /* XMContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMContentView.swift; sourceTree = "<group>"; };
+		03AD5D5B17440813560EC82F /* PhonePlaybackState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhonePlaybackState.swift; sourceTree = "<group>"; };
 		07BD8E34928FA716F0580DCE /* XMWatch-watchOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "XMWatch-watchOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0841CECD306BBD3D62A113F0 /* AVPlayerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVPlayerController.swift; sourceTree = "<group>"; };
 		0FFD4CA2DF35F4AB5DDF82AD /* XMFavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMFavoritesView.swift; sourceTree = "<group>"; };
@@ -109,6 +115,7 @@
 		4B42ECB72B27EB155F0F40B4 /* XMSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMSettingsView.swift; sourceTree = "<group>"; };
 		531FC33F8C4C7B8640D004C8 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		588E06CAEB341B714AB07B6B /* PlayerTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerTrack.swift; sourceTree = "<group>"; };
+		63C2B240C793D14291C24BA4 /* PhonePlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhonePlayerView.swift; sourceTree = "<group>"; };
 		6BFCCDE12EB7D501279B48DC /* XMChannelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMChannelsView.swift; sourceTree = "<group>"; };
 		6DF1CAD82D9D7694C52C7E3B /* PlayerCoordinating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerCoordinating.swift; sourceTree = "<group>"; };
 		79096C73FD534A245819E72C /* ChannelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelsView.swift; sourceTree = "<group>"; };
@@ -135,6 +142,7 @@
 		CF60143A346AB00FD432786F /* XMHLSProxyServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMHLSProxyServer.swift; sourceTree = "<group>"; };
 		D57D165F06870887641F82D6 /* PlayerOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerOptions.swift; sourceTree = "<group>"; };
 		D698DB21997881934D377E8C /* XMWatchWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = XMWatchWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD8229EFD4AC8E1F6D696F02 /* PlaybackConnectivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackConnectivity.swift; sourceTree = "<group>"; };
 		E47B96F495FE339AE995AFDB /* PlayerProperty.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerProperty.swift; sourceTree = "<group>"; };
 		EA419ED4F33E5DFBB927E655 /* NowPlayingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingManager.swift; sourceTree = "<group>"; };
 		EED0C934105AAB382C3BD963 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -210,6 +218,7 @@
 		2F7DD1F1E7CB8FB950DF854C /* Player */ = {
 			isa = PBXGroup;
 			children = (
+				63C2B240C793D14291C24BA4 /* PhonePlayerView.swift */,
 				B686D59DC876C7941F6ACCD8 /* XMPlayerView.swift */,
 			);
 			path = Player;
@@ -239,6 +248,16 @@
 				0FFD4CA2DF35F4AB5DDF82AD /* XMFavoritesView.swift */,
 			);
 			path = Favorites;
+			sourceTree = "<group>";
+		};
+		6197169CD3F6404E1CF3399B /* Connectivity */ = {
+			isa = PBXGroup;
+			children = (
+				03AD5D5B17440813560EC82F /* PhonePlaybackState.swift */,
+				DD8229EFD4AC8E1F6D696F02 /* PlaybackConnectivity.swift */,
+			);
+			name = Connectivity;
+			path = ../Shared/Connectivity;
 			sourceTree = "<group>";
 		};
 		66BAD0B106C1F174DDA27E85 /* Models */ = {
@@ -276,6 +295,7 @@
 		926E0BDD34616D41AFA14119 = {
 			isa = PBXGroup;
 			children = (
+				6197169CD3F6404E1CF3399B /* Connectivity */,
 				998051F0AD758C2DEC936192 /* Features */,
 				8DC45B3FD945725BCACA8910 /* Features */,
 				C91E2BB83441CB7185CDD08C /* Intents */,
@@ -580,6 +600,8 @@
 				AD9C6E50854C417F9666F234 /* FavoritesView.swift in Sources */,
 				0189A7E02097BFA2C6A1CB73 /* MainTabView.swift in Sources */,
 				A96C79DC8253702B2F947A36 /* NowPlayingManager.swift in Sources */,
+				EEF75B16B9C26071AAB23817 /* PhonePlaybackState.swift in Sources */,
+				FC08A6B4CC3CF40AE83B4309 /* PlaybackConnectivity.swift in Sources */,
 				B9397062C120AB2B788FF058 /* PlayerCoordinating.swift in Sources */,
 				A79C7DD826CB72F70069661A /* PlayerOptions.swift in Sources */,
 				3191F956649A85102DEB8812 /* PlayerProperty.swift in Sources */,
@@ -599,6 +621,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9B06D2616DA85B88C6C33416 /* PhonePlaybackState.swift in Sources */,
+				CBEC2E66ACE08F74A9CF3564 /* PhonePlayerView.swift in Sources */,
+				0F9F83F0602160F149D238D0 /* PlaybackConnectivity.swift in Sources */,
 				97A3187A87FED8657CA5B88C /* PlayerCoordinating.swift in Sources */,
 				A612D7DC3F90D632794C3BFB /* PlayerOptions.swift in Sources */,
 				AD28B74F5B36A40137F45BCD /* PlayerProperty.swift in Sources */,
@@ -707,7 +732,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "../XMWatch-watchOS/XMWatchWidget/XMWatchWidget.entitlements";
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "../XMWatch-watchOS/XMWatchWidget/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
@@ -727,7 +752,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "XMWatch-iOS.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -749,7 +774,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "../XMWatch-watchOS/XMWatchWidget/XMWatchWidget.entitlements";
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "../XMWatch-watchOS/XMWatchWidget/Info.plist";
@@ -772,7 +797,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "../XMWatch-watchOS/XMWatch-watchOS.entitlements";
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "../XMWatch-watchOS/Info.plist";
 				MARKETING_VERSION = 1.0.0;
@@ -851,7 +876,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "../XMWatch-watchOS/XMWatch-watchOS.entitlements";
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "../XMWatch-watchOS/Info.plist";
@@ -873,7 +898,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "XMWatch-iOS.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;

@@ -55,6 +55,7 @@ targets:
       - path: Services
       - path: Assets.xcassets
       - path: ../Shared/Intents
+      - path: ../Shared/Connectivity
     dependencies:
       - package: StarPlayrRadioKit
       - target: XMWatchWidgetExtension

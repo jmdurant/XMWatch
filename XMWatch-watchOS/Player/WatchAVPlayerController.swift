@@ -41,6 +41,8 @@ final class WatchAVPlayerController: PlayerCoordinating {
     var onPropertyChange: ((PlayerProperty, Any?) -> Void)?
     var onPlaybackEnded: (() -> Void)?
     var onPlaybackFailed: ((Error?) -> Void)?
+    var onPlaybackProgress: (() -> Void)?
+    private var lastObservedPosition: Double?
     var onMediaLoaded: (() -> Void)?
     /// Fired when playback stalls (buffer underrun / network drop) and does not
     /// self-recover within `stallGracePeriod`. The service treats this like a
@@ -243,6 +245,8 @@ final class WatchAVPlayerController: PlayerCoordinating {
         onPlaybackFailed = nil
         onPlaybackStalled = nil
         onMediaLoaded = nil
+        onPlaybackProgress = nil
+        lastObservedPosition = nil
         onPauseRequested = nil
         removeObservers()
         player?.pause()
@@ -319,7 +323,15 @@ final class WatchAVPlayerController: PlayerCoordinating {
             queue: .main
         ) { [weak self] time in
             Task { @MainActor in
-                self?.onPropertyChange?(.timePos, CMTimeGetSeconds(time))
+                guard let self else { return }
+                let position = CMTimeGetSeconds(time)
+                if position.isFinite, self.audioSessionReady, !self.isPausedByUser, !self.isSuspended {
+                    if let previous = self.lastObservedPosition, position > previous + 0.1 {
+                        self.onPlaybackProgress?()
+                    }
+                    self.lastObservedPosition = position
+                }
+                self.onPropertyChange?(.timePos, position)
             }
         }
 

@@ -7,18 +7,20 @@ func writeDebug(_ message: String) {}
 @MainActor
 final class AVPlayerController {
     static var playedURLs: [URL] = []
+    static var onPlay: ((AVPlayerController) -> Void)?
     var player: AVPlayer?
     var isSuspended = false
     var onPropertyChange: ((PlayerProperty, Any?) -> Void)?
     var onPlaybackEnded: (() -> Void)?
     var onPlaybackFailed: ((Error?) -> Void)?
     var onPlaybackStalled: (() -> Void)?
+    var onPlaybackProgress: (() -> Void)?
     var onMediaLoaded: (() -> Void)?
     var onPauseRequested: (() -> Void)?
     private(set) var destroyed = false
     private(set) var paused = false
     init(options: PlayerOptions) {}
-    func play(_ url: URL) { Self.playedURLs.append(url) }
+    func play(_ url: URL) { Self.playedURLs.append(url); Self.onPlay?(self) }
     func pause() { paused = true }
     func destruct() { destroyed = true }
     func logPlayerState() {}

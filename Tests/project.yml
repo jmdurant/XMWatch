@@ -16,6 +16,7 @@ targetTemplates:
     platform: macOS
     sources:
       - path: Playback
+      - path: ../Shared/Connectivity/PhonePlaybackState.swift
       - path: ../XMWatch-iOS/Models/XMChannel.swift
       - path: ../XMWatch-iOS/Player/PlayerOptions.swift
       - path: ../XMWatch-iOS/Player/PlayerProperty.swift
@@ -27,6 +28,8 @@ targets:
     sources:
       - path: ../XMWatch-iOS/Services/XMRadioService.swift
   WatchPlaybackTests:
+    settings:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: WATCH_SERVICE_TESTS
     templates: [PlaybackTests]
     sources:
       - path: ../XMWatch-watchOS/Services/XMRadioService.swift

@@ -350,11 +350,25 @@ enum XMRadioCatalog {
     }
 
     static func pause() {
+        #if os(watchOS)
+        if UserDefaults.standard.string(forKey: "xm_playback_device") == "phone" {
+            PlaybackConnectivity.shared.send(.pause)
+            return
+        }
+        #endif
         let service = XMRadioService.shared
         service.pausePlayback()
     }
 
     static func resume() async -> Bool {
+        #if os(watchOS)
+        if UserDefaults.standard.string(forKey: "xm_playback_device") == "phone" {
+            let connection = PlaybackConnectivity.shared
+            guard connection.isReachable else { return false }
+            connection.send(.play)
+            return true
+        }
+        #endif
         let service = XMRadioService.shared
         if service.currentChannel != nil {
             service.resumePlayback()
@@ -366,11 +380,23 @@ enum XMRadioCatalog {
     }
 
     static func next() async {
+        #if os(watchOS)
+        if UserDefaults.standard.string(forKey: "xm_playback_device") == "phone" {
+            PlaybackConnectivity.shared.send(.next)
+            return
+        }
+        #endif
         guard XMRadioService.shared.currentChannel != nil else { return }
         await XMRadioService.shared.nextChannel()
     }
 
     static func previous() async {
+        #if os(watchOS)
+        if UserDefaults.standard.string(forKey: "xm_playback_device") == "phone" {
+            PlaybackConnectivity.shared.send(.previous)
+            return
+        }
+        #endif
         guard XMRadioService.shared.currentChannel != nil else { return }
         await XMRadioService.shared.previousChannel()
     }

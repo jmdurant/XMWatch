@@ -36,10 +36,16 @@ final class XMRadioService {
     private var tokenTimer: Task<Void, Never>?
     private var playbackTask: Task<Bool, Never>?
     private var recoveryTask: Task<Void, Never>?
+    private var recoveryID: UUID?
     private var refreshTask: Task<Bool, Never>?
     private var playbackGeneration = UUID()
+    private var recoveryAttempt = 0
+    private(set) var isConfigured = false
+    private var hasAttemptedAutoResume = false
     private let httpSession: URLSession
     private let now: () -> Date
+    private let configureEnvironment: (String) async -> Void
+    private let recoveryWait: (Int) async throws -> Void
     /// True intent to be playing — set when the user starts a channel, cleared
     /// when they pause. Unlike `isPaused`, this is NOT flipped by a stall dropping
     /// the player rate to 0, so recovery uses it to decide whether to keep trying.
@@ -53,18 +59,26 @@ final class XMRadioService {
 
     private var tokenRefreshTime: Int = 0
     private var pdtCache: [String: Any] = [:]
+    private(set) var metadataPollInterval: TimeInterval = 8
 
-    init(httpSession: URLSession = .shared, now: @escaping () -> Date = Date.init) {
+    init(httpSession: URLSession = .shared, now: @escaping () -> Date = Date.init,
+         configureEnvironment: @escaping (String) async -> Void = { region in
+             await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                 DispatchQueue.global(qos: .userInitiated).async {
+                     preflightConfig(location: region)
+                     continuation.resume()
+                 }
+             }
+         },
+         recoveryWait: @escaping (Int) async throws -> Void = { seconds in
+             try await Task.sleep(for: .seconds(seconds))
+         }) {
         self.httpSession = httpSession
         self.now = now
+        self.configureEnvironment = configureEnvironment
+        self.recoveryWait = recoveryWait
         let saved = UserDefaults.standard.stringArray(forKey: "xm_favorites") ?? []
         favoriteChannelNumbers = Set(saved)
-
-        let autoGupid = UserDefaults.standard.string(forKey: "gupid") ?? ""
-        let autoChannels = UserDefaults.standard.dictionary(forKey: "channels") ?? [:]
-        if !autoGupid.isEmpty && autoChannels.count > 1 {
-            status = .ready
-        }
     }
 
     // MARK: - Debug helper
@@ -251,12 +265,7 @@ final class XMRadioService {
     func configure(region: String) async {
         dbg("configure: \(region)")
         // preflightConfig sets globals and is synchronous — run off main
-        await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
-            DispatchQueue.global(qos: .userInitiated).async {
-                preflightConfig(location: region)
-                cont.resume()
-            }
-        }
+        await configureEnvironment(region)
 
         let autoGupid = UserDefaults.standard.string(forKey: "gupid") ?? ""
         let autoChannels = UserDefaults.standard.dictionary(forKey: "channels") ?? [:]
@@ -265,6 +274,7 @@ final class XMRadioService {
             buildChannelList()
             status = .ready
         }
+        isConfigured = true
     }
 
     // MARK: - Login
@@ -473,6 +483,8 @@ final class XMRadioService {
     // MARK: - Now Playing
 
     func updateNowPlaying() async {
+        // Failed requests back off; successful responses schedule the next marker boundary.
+        metadataPollInterval = 12
         let generation = playbackGeneration
         guard let channel = currentChannel else { return }
 
@@ -484,10 +496,12 @@ final class XMRadioService {
         urlReq.httpMethod = "GET"
         urlReq.setValue(userAgent, forHTTPHeaderField: "User-Agent")
         urlReq.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        urlReq.timeoutInterval = 60
+        urlReq.timeoutInterval = 8
+        urlReq.cachePolicy = .reloadIgnoringLocalCacheData
 
         do {
-            let (data, _) = try await httpSession.data(for: urlReq)
+            let (data, response) = try await httpSession.data(for: urlReq)
+            guard let response = response as? HTTPURLResponse, (200..<300).contains(response.statusCode) else { return }
             let nplData = try JSONDecoder().decode(NowPlayingLiveStruct.self, from: data)
 
             guard !Task.isCancelled, generation == playbackGeneration,
@@ -508,24 +522,31 @@ final class XMRadioService {
                 formatter.formatOptions = [.withInternetDateTime]
                 return formatter.date(from: value)
             }
-            let marker = live.markerLists?.first(where: { $0.layer == "cut" })?.markers
-                .compactMap { marker -> (NowPlayingLiveStruct.Marker, Date)? in
-                    guard let start = markerDate(marker.timestamp.absolute),
-                          start <= playbackDate,
-                          marker.duration > 0,
-                          playbackDate < start.addingTimeInterval(marker.duration) else { return nil }
-                    return (marker, start)
-                }
-                .max(by: { $0.1 < $1.1 })?.0
+            let markers = live.markerLists?.first(where: { $0.layer == "cut" })?.markers ?? []
+            let datedMarkers = markers.compactMap { marker -> (NowPlayingLiveStruct.Marker, Date)? in
+                guard let start = markerDate(marker.timestamp.absolute) else { return nil }
+                return (marker, start)
+            }
+            let active = datedMarkers.filter {
+                $0.1 <= playbackDate && $0.0.duration > 0 && playbackDate < $0.1.addingTimeInterval($0.0.duration)
+            }.max(by: { $0.1 < $1.1 })
+            let marker = active?.0
+            // Wake at a known song/link boundary instead of sleeping through it.
+            // Use the audible timeline, so metadata doesn't jump ahead of buffered audio.
+            var boundaries = datedMarkers.map { $0.1 }.filter { $0 > playbackDate }
+            if let active { boundaries.append(active.1.addingTimeInterval(active.0.duration)) }
+            let untilBoundary = boundaries.min()?.timeIntervalSince(playbackDate) ?? 8
+            metadataPollInterval = marker == nil ? 2 : min(8, max(1, untilBoundary))
             let artist = marker?.cut?.artists.first?.name.trimmingCharacters(in: .whitespacesAndNewlines)
             let song = marker?.cut?.title?.trimmingCharacters(in: .whitespacesAndNewlines)
             nowPlayingArtist = artist?.isEmpty == false ? artist : nil
             nowPlayingSong = song?.isEmpty == false ? song : nil
-            nowPlayingArtURL = nil
+            var artworkURL: String?
             if let artist = nowPlayingArtist, let song = nowPlayingSong,
                let key = sha256(artist + song) {
-                nowPlayingArtURL = MemBase[key] ?? nil
+                artworkURL = MemBase[key] ?? nil
             }
+            nowPlayingArtURL = artworkURL
             currentChannel?.artist = nowPlayingArtist
             currentChannel?.song = nowPlayingSong
             currentChannel?.albumArtURL = nowPlayingArtURL
@@ -572,6 +593,7 @@ final class XMRadioService {
 
     @discardableResult
     func startPlayback(channel: XMChannel) async -> Bool {
+        UserDefaults.standard.set("watch", forKey: "xm_playback_device")
         cancelPendingPlayback()
         let generation = playbackGeneration
         currentChannel = channel
@@ -680,6 +702,20 @@ final class XMRadioService {
             }
         }
 
+        controller.onPlaybackProgress = { [weak self, weak controller] in
+            guard let self, self.playbackIsCurrent(generation), self.playerController === controller else { return }
+            self.recoveryAttempt = 0
+            if self.isReconnecting { self.isReconnecting = false }
+            if self.isBuffering { self.isBuffering = false }
+            if self.isPaused {
+                self.isPaused = false
+                self.nowPlayingManager?.updatePlaybackState(rate: 1)
+            }
+            self.recoveryTask?.cancel()
+            self.recoveryTask = nil
+            self.recoveryID = nil
+        }
+
         controller.onMediaLoaded = { [weak self, weak controller] in
             Task { @MainActor in
                 guard let self, self.playbackIsCurrent(generation), self.playerController === controller else { return }
@@ -748,6 +784,7 @@ final class XMRadioService {
         playbackTask = nil
         recoveryTask?.cancel()
         recoveryTask = nil
+        recoveryID = nil
         refreshTask?.cancel()
         refreshTask = nil
         pdtTimer?.cancel()
@@ -755,6 +792,7 @@ final class XMRadioService {
         tokenTimer?.cancel()
         tokenTimer = nil
         isReconnecting = false
+        recoveryAttempt = 0
     }
 
     func pausePlayback() {
@@ -764,6 +802,15 @@ final class XMRadioService {
         isPaused = true
         isBuffering = false
         nowPlayingManager?.updatePlaybackState(rate: 0)
+    }
+
+    func stopForPhoneMode() {
+        pausePlayback()
+        playerController?.destruct()
+        playerController = nil
+        nowPlayingManager?.invalidate()
+        nowPlayingManager = nil
+        proxyServer.stop()
     }
 
     func resumePlayback() {
@@ -799,7 +846,7 @@ final class XMRadioService {
         pdtTimer?.cancel()
         pdtTimer = Task {
             while !Task.isCancelled {
-                // Fetch immediately on first pass, then every 12s.
+                // Fetch immediately, then follow the next audible marker boundary.
                 await updateNowPlaying()
                 guard !Task.isCancelled else { return }
 
@@ -815,7 +862,7 @@ final class XMRadioService {
                     )
                 }
 
-                try? await Task.sleep(nanoseconds: 12_000_000_000)
+                do { try await Task.sleep(for: .seconds(metadataPollInterval)) } catch { return }
             }
         }
     }
@@ -833,24 +880,29 @@ final class XMRadioService {
 
     // MARK: - Session Recovery
 
+    static func recoveryDelay(attempt: Int) -> Int {
+        min(30, 1 << min(max(attempt, 1), 5))
+    }
+
     private func startRecoveryIfNeeded() {
         guard recoveryTask == nil, userWantsPlayback, currentChannel != nil,
               playerController?.isSuspended != true else { return }
         let generation = playbackGeneration
         isReconnecting = true
+        let recoveryID = UUID()
+        self.recoveryID = recoveryID
         recoveryTask = Task { [weak self] in
             guard let self else { return }
             defer {
-                if generation == self.playbackGeneration {
-                    self.isReconnecting = false
+                if self.recoveryID == recoveryID {
+                    self.recoveryID = nil
                     self.recoveryTask = nil
                 }
             }
-            var attempt = 0
             while self.playbackIsCurrent(generation) {
-                attempt += 1
-                let delay = min(30, 1 << min(attempt, 5))
-                do { try await Task.sleep(for: .seconds(delay)) } catch { return }
+                self.recoveryAttempt += 1
+                let delay = Self.recoveryDelay(attempt: self.recoveryAttempt)
+                do { try await self.recoveryWait(delay) } catch { return }
                 guard self.playbackIsCurrent(generation), let channel = self.currentChannel else { return }
                 if self.playerController?.isSuspended == true { continue }
                 if await self.performPlayback(channel: channel, generation: generation) { return }
@@ -874,6 +926,14 @@ final class XMRadioService {
     }
 
     // MARK: - Resume Last Channel
+
+    func resumeOnceAfterConfiguration() async {
+        guard UserDefaults.standard.string(forKey: "xm_playback_device") != "phone" else { return }
+        guard !Task.isCancelled, isConfigured, status == .ready, !hasAttemptedAutoResume else { return }
+        hasAttemptedAutoResume = true
+        guard currentChannel == nil, !userWantsPlayback else { return }
+        await resumeLastChannelIfEnabled()
+    }
 
     func resumeLastChannelIfEnabled() async {
         guard UserDefaults.standard.bool(forKey: "xm_resume_last_channel"),

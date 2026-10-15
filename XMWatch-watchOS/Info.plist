@@ -18,6 +18,8 @@
 	<string>APPL</string>
 	<key>MinimumOSVersion</key>
 	<string>27.0</string>
+	<key>WKRunsIndependentlyOfCompanionApp</key>
+	<true/>
 	<key>WKApplication</key>
 	<true/>
 	<key>WKCompanionAppBundleIdentifier</key>

@@ -17,11 +17,13 @@ struct XMWatchApp: App {
             XMContentView()
                 .environment(radioService)
                 .task {
+                    PlaybackConnectivity.shared.start(service: radioService)
                     let region = Locale.current.region?.identifier == "CA" ? "CA" : "US"
                     await radioService.configure(region: region)
                 }
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {
+                        PlaybackConnectivity.shared.refresh()
                         Task {
                             await radioService.refreshSessionOnForeground()
                         }
