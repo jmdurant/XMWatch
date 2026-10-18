@@ -1,3 +1,15 @@
+## XMWatch for iPhone and Apple Watch
+
+The `XMWatch-iOS` and `XMWatch-watchOS` folders contain the newer native radio apps. Generate the combined iPhone/watch project with `xcodegen generate --spec XMWatch-iOS/project.yml`, then open `XMWatch-iOS/XMWatch-iOS.xcodeproj`. Playback regression and simulator test instructions are in [Tests/README.md](Tests/README.md).
+
+XMWatch on iPhone supports **Meta Ray-Ban Display** through Meta Wearables DAT **1.0.1**, using the same discovery, registration, connection lifecycle, and retained-error handling as Cadence and Slingshot. In **Settings → Meta Glasses**, register with Meta AI, install/update the DAT app on the glasses, then connect. Keep the glasses on and unfolded, with Bluetooth connected and Developer Mode enabled in Meta AI. The screen lists discovered devices and offers separate DAT app and firmware update actions.
+
+Start a channel on the iPhone to show the current song, artist, channel, and live playback status on the glasses. **Previous / Play or Pause / Next** controls the iPhone's channel player. Pausing also cancels tuning/reconnection. Audio follows the iPhone's selected output; choose glasses in the Now Playing audio output picker to hear it there. Glasses without a display can use Bluetooth audio but cannot show this player. Apple Watch retains its standalone and iPhone-control modes; the DAT SDK belongs only to the iOS target.
+
+The checked-in Meta configuration uses developer mode (`MetaAppID = 0`, callback `xmwatch://`). Distribution requires the app's real Meta App ID and `MWDAT_CLIENT_TOKEN`, with its bundle ID, signing team, and callback registered in the Meta developer dashboard. Do not commit credentials. Mock tests verify discovery, reconnects, error retention, and radio commands without an account; real-glasses registration, display/input, audio routing, and locked-phone operation still need hardware verification.
+
+---
+
 Important: StarPlayrX was developed for the Visually Impaired, a group of paying subscribers that SiriusXM has classsically ignored.
 
 Update: macOS 26 static, hisses and popping sounds fix with AVPlayer,

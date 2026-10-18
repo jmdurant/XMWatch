@@ -17,22 +17,31 @@ settings:
 packages:
   StarPlayrRadioKit:
     path: ../StarPlayrRadioKit
+  MetaWearablesDAT:
+    url: https://github.com/facebook/meta-wearables-dat-ios.git
+    exactVersion: 1.0.1
 
 targets:
   XMWatch-iOS:
     type: application
     platform: iOS
+    productName: XMWatch
     sources:
-      - path: .
-        excludes:
-          - project.yml
-          - "*.xcodeproj"
-          - ".build"
-          - ".swiftpm"
+      - path: XMWatchApp.swift
+      - path: Features
+      - path: Models
+      - path: Player
+      - path: Services
+      - path: MetaGlasses
+      - path: Assets.xcassets
       - path: ../Shared/Intents
       - path: ../Shared/Connectivity
     dependencies:
       - package: StarPlayrRadioKit
+      - package: MetaWearablesDAT
+        product: MWDATCore
+      - package: MetaWearablesDAT
+        product: MWDATDisplay
       - target: XMWatch-watchOS
     settings:
       base:
@@ -50,6 +59,20 @@ targets:
         Release:
           SWIFT_OPTIMIZATION_LEVEL: -O
           DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+
+  XMWatchMetaTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: ../Tests/MetaGlasses
+    dependencies:
+      - target: XMWatch-iOS
+      - package: MetaWearablesDAT
+        product: MWDATMockDevice
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.doctordurant.xmwatch.meta-tests
+        GENERATE_INFOPLIST_FILE: YES
 
   XMWatch-watchOS:
     type: application
@@ -107,3 +130,15 @@ targets:
           SWIFT_OPTIMIZATION_LEVEL: -O
           DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
           SWIFT_COMPILATION_MODE: wholemodule
+
+schemes:
+  XMWatch-iOS:
+    build:
+      targets:
+        XMWatch-iOS: all
+    test:
+      targets:
+        - name: XMWatchMetaTests
+          parallelizable: false
+      environmentVariables:
+        XM_SKIP_STARTUP_FOR_TESTS: "1"

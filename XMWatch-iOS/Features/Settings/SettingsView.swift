@@ -18,6 +18,14 @@ struct SettingsView: View {
                     }
             }
 
+            Section("Accessories") {
+                NavigationLink {
+                    MetaGlassesIntegrationView()
+                } label: {
+                    Label("Meta Glasses", systemImage: "eyeglasses")
+                }
+            }
+
             Section("Appearance") {
                 Picker("Appearance", selection: $appearance) {
                     Text("System").tag("system")
