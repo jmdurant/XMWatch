@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.MEDIA_CONTENT_CONTROL" />
+    <queries><package android:name="com.doctordurant.xmwatch.android" /></queries>
+    <application android:label="XMWatch Controller Probe" android:allowBackup="false" />
+    <instrumentation android:name="xmwatch.testing.RadioLibraryProbe"
+        android:targetPackage="com.doctordurant.xmwatch.controllerprobe" android:functionalTest="true" />
+</manifest>

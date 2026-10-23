@@ -1,0 +1,25 @@
+{
+  "checkpoint": "2026-10-22",
+  "scope": "Android phone checkpoint; not a claim of complete Apple parity",
+  "releaseArtifacts": {
+    "apk": {
+      "localPath": "build/android/parity-current/XMWatchAndroid-release.apk",
+      "sha256": "319df711cde3449d55def2cd16579ff0a774dfb7ff5c119aad6653bcdf4f65b0"
+    },
+    "aab": {
+      "localPath": "build/android/parity-current/XMWatchAndroid-release.aab",
+      "sha256": "d941dfb38d3123cbcd587fca3a51af0483b7939af0c12eb5b4b20ff466b8d3d5"
+    }
+  },
+  "verification": [
+    "Optimized APK/AAB build and static package verification passed.",
+    "Saved-session live release radio playback, background decoding, metadata, app/system channel changes and pause/resume passed.",
+    "Actual release Settings diagnostics off/on persistence across cold starts passed.",
+    "Apple sign-in views type-checked against simulator SwiftUI SDKs using a provider stub."
+  ],
+  "remaining": [
+    "Canadian-account authentication/playback and physical Android accessories remain unverified.",
+    "Apple auth view checking does not constitute a full Apple project build or live authentication."
+  ],
+  "distribution": "Development-signed local builds. No store upload or public binary release performed."
+}

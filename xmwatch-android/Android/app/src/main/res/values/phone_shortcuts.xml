@@ -1,0 +1,5 @@
+<resources>
+    <string name="shortcut_tune_channel">Tune Channel</string>
+    <string name="shortcut_pause">Pause</string>
+    <string name="shortcut_resume">Resume</string>
+</resources>

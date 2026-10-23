@@ -1,0 +1,11 @@
+--- a/Sources/SkipUI/SkipUI/Containers/Navigation.swift
++++ b/Sources/SkipUI/SkipUI/Containers/Navigation.swift
+@@ -1096,7 +1096,7 @@
+         LaunchedEffect(stackEffectKey) {
+             delay(1000) // 1 second
+             var syncedBackStackState: [String: BackStackState] = [:]
+-            for key in stackKeys {
++            for key in navBackStack.toList() {
+                 let entryId = stableEntryId(forKey: key)
+                 if let state = backStackState[entryId] {
+                     syncedBackStackState[entryId] = state

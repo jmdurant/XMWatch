@@ -1,1 +1,26 @@
 .mcp.json
+
+# Android native build outputs
+/.build/
+/build/
+
+/scripts/__pycache__/
+
+# Local Android build, signing and tooling state
+.DS_Store
+__pycache__/
+*.pyc
+.gradle/
+.kotlin/
+local.properties
+keystore.properties
+*.jks
+*.keystore
+*.apk
+*.aab
+*.apks
+*.pem
+*.p12
+.env
+.build/
+build/

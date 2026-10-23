@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:label="XMWatch Meta Release Harness" android:allowBackup="false" />
+    <instrumentation android:name=".MetaGlassesInstrumentation"
+        android:targetPackage="com.doctordurant.xmwatch.android" android:functionalTest="true" />
+</manifest>

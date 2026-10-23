@@ -1,0 +1,29 @@
+# Skip configuration for XMWatchAndroid module
+#
+# Kotlin dependencies and Gradle build options for this module can be configured here
+#build:
+#  contents:
+#    - block: 'dependencies'
+#      contents:
+#        - 'implementation("androidx.compose.runtime:runtime")'
+
+# this is a natively-compiled Skip Fuse module
+skip:
+  mode: 'native'
+  bridging: true
+
+build:
+  contents:
+    - block: 'dependencies'
+      export: false
+      contents:
+        - 'api("com.meta.wearable:mwdat-core:1.0.1")'
+        - 'api("com.meta.wearable:mwdat-display:1.0.1")'
+        - 'api("androidx.media3:media3-exoplayer:1.11.0")'
+        - 'api("androidx.media3:media3-exoplayer-hls:1.11.0")'
+        - 'api("androidx.media3:media3-session:1.11.0")'
+    - block: 'android'
+      contents:
+        - block: 'defaultConfig'
+          contents:
+            - 'minSdk = 29'

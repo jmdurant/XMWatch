@@ -1,3 +1,40 @@
+## Android port (in progress)
+
+`xmwatch-android` is the native Swift/Skip Android app. `XMRadioCore` contains the
+portable SiriusXM request builder, authenticated HTTP client, and channel parser.
+The app covers sign-in, region selection, channel search, local favorites, live HLS
+audio, Now Playing controls, and encrypted cookie-session restoration. Streaming
+recovery and current-song metadata are implemented. Live checks passed eight-minute
+session renewal, stream recovery, search/favorites, and optimized-release background
+playback/system controls on the ARM64 emulator. App/system next/previous and actual
+notification navigation also passed on the optimized build. Full Android parity is
+still in progress. Saved-cookie retry and opt-in last-channel resumption also
+passed emulator UI checks. Category browsing, catalog refresh/retry, Light/Dark
+appearance, and corrected HTTPS channel logos are implemented and verified.
+Android Auto/media controllers now browse all channels, favorites and categories,
+search/select channels by voice, read local cover art and resume the saved channel
+after a cold start using the existing encrypted cookie. Emulator checks cover
+459 channels and both approved and rejected external clients; physical head-unit
+testing and Android glasses remain unfinished. Wear OS is outside the scope.
+See [Android development](xmwatch-android/README.md).
+
+The current Android implementation also adds per-channel song and artist previews
+to channel lists, with the same name/number/category/song/artist search rules on
+the phone and connected media controllers. One bulk request refreshes the catalog
+every 30 seconds while foregrounded and on demand for controller browsing;
+requests share a 30-second throttle. Entries expire after 90 seconds without a
+successful update, and account/region changes discard older replies. These
+listing previews stay separate from the audible channel's Now Playing timeline.
+
+A mini player now stays available across Channels, Favorites and Settings, with
+current artwork/metadata, connection status, play/pause and an entry to Now Playing.
+Now Playing adapts its artwork and controls to portrait or landscape space.
+This debug batch passed 29 shared checks on both macOS and native Android, a
+saved-cookie live song/artist search check, and decoded playback with mini-player
+navigation and landscape play/pause. Private preferences/cookies were restored
+and installed APK hashes verified. Physical devices, the current optimized build,
+a real Canadian account and an Android Auto artist-query check remain unverified.
+
 ## XMWatch for iPhone and Apple Watch
 
 The `XMWatch-iOS` and `XMWatch-watchOS` folders contain the newer native radio apps. Generate the combined iPhone/watch project with `xcodegen generate --spec XMWatch-iOS/project.yml`, then open `XMWatch-iOS/XMWatch-iOS.xcodeproj`. Playback regression and simulator test instructions are in [Tests/README.md](Tests/README.md).
@@ -14,7 +51,7 @@ Important: StarPlayrX was developed for the Visually Impaired, a group of paying
 
 Update: macOS 26 static, hisses and popping sounds fix with AVPlayer,
 
-while playing run this in the terminal 
+while playing run this in the terminal
 
 `sudo killall coreaudiod`
 https://medium.com/tech-blog-today/how-to-fix-popping-sounds-on-macos-26-c2846fc65ad0
@@ -70,3 +107,5 @@ https://medium.com/tech-blog-today/how-to-fix-popping-sounds-on-macos-26-c2846fc
 Don't be a slacker, be a Star Player.
 
 F. S. X. M. for ignoring the visually impaired.
+
+Android connected-browser updates now refresh subscribed Favorites/catalog folders without reconnecting. Verified with 22 native tests and a saved-cookie live browser/UI check on CadenceCarLibrary; exact account/preferences restoration passed. See `xmwatch-android/README.md` and `build/android/checkpoints/catalog-updates-20261022/`.

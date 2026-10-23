@@ -4,6 +4,8 @@ struct SignInView: View {
     @Environment(XMRadioService.self) private var radioService
 
     @State private var isSigningIn = false
+    @State private var username = ""
+    @State private var password = ""
 
     var body: some View {
         VStack(spacing: 24) {
@@ -24,6 +26,18 @@ struct SignInView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
+            VStack(spacing: 12) {
+                TextField("Username or email", text: $username)
+                    .textContentType(.username)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                SecureField("Password", text: $password)
+                    .textContentType(.password)
+            }
+            .textFieldStyle(.roundedBorder)
+            .frame(maxWidth: 320)
+            .disabled(isSigningIn)
+
             Button {
                 Task { await signIn() }
             } label: {
@@ -33,7 +47,7 @@ struct SignInView: View {
                     .padding(.vertical, 12)
             }
             .buttonStyle(.borderedProminent)
-            .disabled(isSigningIn)
+            .disabled(isSigningIn || username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || password.isEmpty)
 
             if isSigningIn {
                 ProgressView()
@@ -66,11 +80,13 @@ struct SignInView: View {
     }
 
     private func signIn() async {
+        let user = username.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !isSigningIn, !user.isEmpty, !password.isEmpty else { return }
         isSigningIn = true
-        _ = await radioService.signIn(
-            username: "jamesdurantjr2016@gmail.com",
-            password: "JMD2isme!"
-        )
-        isSigningIn = false
+        defer {
+            isSigningIn = false
+            password = ""
+        }
+        _ = await radioService.signIn(username: user, password: password)
     }
 }

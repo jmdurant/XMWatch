@@ -1,0 +1,11 @@
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="tune-channel" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/shortcut_tune_channel">
+        <intent android:action="xmwatch.android.action.AUTOMATION" android:data="xmwatch://automation/pick" android:targetPackage="com.doctordurant.xmwatch.android" android:targetClass="xmwatch.android.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="pause" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/shortcut_pause">
+        <intent android:action="xmwatch.android.action.AUTOMATION" android:data="xmwatch://automation/pause" android:targetPackage="com.doctordurant.xmwatch.android" android:targetClass="xmwatch.android.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="resume" android:enabled="true" android:icon="@mipmap/ic_launcher" android:shortcutShortLabel="@string/shortcut_resume">
+        <intent android:action="xmwatch.android.action.AUTOMATION" android:data="xmwatch://automation/resume" android:targetPackage="com.doctordurant.xmwatch.android" android:targetClass="xmwatch.android.MainActivity" />
+    </shortcut>
+</shortcuts>
