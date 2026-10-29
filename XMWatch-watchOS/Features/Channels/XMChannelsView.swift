@@ -2,7 +2,7 @@ import SwiftUI
 
 struct XMChannelsView: View {
     @Environment(XMRadioService.self) private var radioService
-    @Binding var selectedTab: Int
+    var onPlay: () -> Void
 
     @State private var searchText = ""
     @State private var selectedCategory = "All"
@@ -115,8 +115,8 @@ struct XMChannelsView: View {
 
     private func tuneChannel(_ channel: XMChannel) async {
         tuningChannelId = channel.id
+        onPlay()
         await radioService.startPlayback(channel: channel)
         tuningChannelId = nil
-        selectedTab = 0  // Switch to Now Playing tab
     }
 }

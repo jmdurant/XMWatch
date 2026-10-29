@@ -105,3 +105,27 @@ targets:
           SWIFT_OPTIMIZATION_LEVEL: -O
           DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
           SWIFT_COMPILATION_MODE: wholemodule
+
+  XMWatchWatchUITests:
+    type: bundle.ui-testing
+    platform: watchOS
+    deploymentTarget: "27.0"
+    sources:
+      - path: ../Tests/WatchUI
+    dependencies:
+      - target: XMWatch-watchOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.doctordurant.xmwatch.watchuitests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "5.9"
+        TEST_TARGET_NAME: XMWatch-watchOS
+
+schemes:
+  XMWatchWatchUITests:
+    build:
+      targets:
+        XMWatch-watchOS: all
+        XMWatchWatchUITests: [test]
+    test:
+      targets: [XMWatchWatchUITests]

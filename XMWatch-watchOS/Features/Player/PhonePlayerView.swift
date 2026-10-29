@@ -2,30 +2,38 @@ import SwiftUI
 import WatchKit
 
 struct PhonePlayerView: View {
-    @State private var page = 0
+    var onWatchPlayer: () -> Void
+    @State private var page = 1
     @State private var connectivity = PlaybackConnectivity.shared
+
+    private var phoneIsPlaying: Bool {
+        guard let state = connectivity.phoneState else { return false }
+        return connectivity.isReachable && state.wantsPlayback && !state.isPaused && !state.isBuffering
+    }
 
     var body: some View {
         TabView(selection: $page) {
-            NowPlayingView()
-                .ignoresSafeArea(.container, edges: .bottom)
-                .accessibilityIdentifier("watch.player.system")
-                .tag(0)
-            NavigationStack { details }
-                .tag(1)
+            if phoneIsPlaying {
+                NowPlayingView()
+                    .ignoresSafeArea(.container, edges: .bottom)
+                    .accessibilityIdentifier("watch.player.system")
+                    .tag(0)
+            }
+            details.tag(1)
         }
-        .tabViewStyle(.page(indexDisplayMode: page == 0 ? .never : .automatic))
+        .tabViewStyle(.page(indexDisplayMode: phoneIsPlaying && page == 1 ? .automatic : .never))
         .ignoresSafeArea(.container, edges: .bottom)
+        .navigationTitle(page == 0 ? "" : "Details")
+        .navigationBarTitleDisplayMode(.inline)
         .task { connectivity.refresh() }
+        .onChange(of: phoneIsPlaying) { _, playing in page = playing ? 0 : 1 }
     }
 
     private var details: some View {
         ScrollView {
             VStack(spacing: 8) {
-                XMPlaybackDevicePicker()
-                Label("Playing on iPhone", systemImage: "iphone")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Label("iPhone Controls", systemImage: "iphone")
+                    .font(.headline)
                 if let state = connectivity.phoneState, let channel = state.channelName {
                     Text(state.title ?? channel)
                         .font(.headline)
@@ -79,11 +87,12 @@ struct PhonePlayerView: View {
                     Text(error).font(.caption2).foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
+                Button("Apple Watch Player", systemImage: "applewatch", action: onWatchPlayer)
+                    .accessibilityIdentifier("watch.phone.watchPlayer")
                 Button("Refresh") { connectivity.refresh() }
                     .disabled(connectivity.isCommandPending)
             }
             .padding(.horizontal)
         }
-        .navigationTitle("Details")
     }
 }

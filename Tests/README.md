@@ -9,9 +9,30 @@ xcodebuild -project /tmp/XMWatchRegression/XMWatchRegression.xcodeproj \
 
 The device controllers and system remote command registration are verified by building the app targets. Physical-device checks still needed: lower wrist/lock phone during extended playback, disconnect Bluetooth, interrupt with another audio app, pause during a network outage, and resume after a long pause. Confirm the displayed song follows the audible stream on music and talk channels.
 
-The watch's **Watch / iPhone** selector chooses local streaming or a remote display/controller. iPhone mode works without a watch login. Switching to iPhone stops the watch player and cancels its pending recovery. Remote commands are never queued for later delivery. Explicit Siri channel requests start standalone watch playback; generic play/pause/skip commands follow the selected source.
+The watch's menu has separate **Play on Apple Watch** and **Control iPhone** destinations. Opening the app shows this menu; a saved phone preference cannot launch generic system playback controls. The watch's native Now Playing page is only available during actual local playback; paused/tuning states use explicit watch commands. iPhone mode works without a watch login. Switching to iPhone stops the watch player and cancels its pending recovery. Remote commands are never queued for later delivery. Explicit Siri channel requests start standalone watch playback; generic play/pause/skip commands follow the selected source.
 
-Paired-device checks for the new mode: start a channel on iPhone and compare title/art/state on watch; pause/resume and skip from watch; disconnect/reconnect the phone and confirm cached state is labeled and commands are disabled; sign out on iPhone and confirm the watch clears metadata; switch to iPhone while the watch is tuning and confirm no local restart occurs.
+Paired-device checks for the new mode: start a channel on iPhone and compare title/art/state on watch; pause/resume and skip from watch; disconnect/reconnect the phone and confirm cached state is labeled and commands are disabled; sign out on iPhone and confirm the watch clears metadata; open Control iPhone while the watch is tuning and confirm no local restart occurs.
+
+## Watch playback navigation
+
+The account-free watch UI check launches with phone mode saved and verifies that the
+menu opens, iPhone controls are explicit, switching to the watch player offers local
+controls, and Back returns to the menu. It disables auto-resume for the test process.
+
+```sh
+xcodegen generate --spec XMWatch-watchOS/project.yml
+xcodebuild -project XMWatch-watchOS/XMWatch-watchOS.xcodeproj \
+  -scheme XMWatchWatchUITests \
+  -destination 'platform=watchOS Simulator,name=Apple Watch Series 12 (46mm)' \
+  test CODE_SIGNING_ALLOWED=NO
+```
+
+Physical paired-device check: launch with the iPhone paused, select Play on Apple
+Watch and a channel, and confirm only the watch starts. Open Control iPhone and
+confirm local watch playback stops; phone playback must wait for an explicit Play.
+Return to Apple Watch Player and resume locally. Verify native Crown volume during
+actual playback on each device. Native Now Playing still lets watchOS select the
+active source; it is not an API for targeting a particular device or app.
 
 ## Meta glasses simulator tests
 

@@ -3,105 +3,85 @@ import WatchKit
 
 struct XMPlayerView: View {
     @Environment(XMRadioService.self) private var radioService
+    var onControlPhone: () -> Void
+    var onChooseChannel: () -> Void
+    @State private var page = 1
+
+    // NowPlayingView automatically chooses an audio source. Never offer it as
+    // the watch player until local playback is active, or Play could hit iPhone.
+    private var watchIsPlaying: Bool {
+        radioService.playerController != nil && radioService.userWantsPlayback
+            && !radioService.isPaused && !radioService.isBuffering
+    }
 
     var body: some View {
-        ScrollView {
-            XMPlaybackDevicePicker()
-            if let channel = radioService.currentChannel {
-                VStack(spacing: 10) {
-                    // Song title + Artist
-                    VStack(spacing: 2) {
-                        if radioService.isReconnecting {
-                            ProgressView()
-                                .padding(.bottom, 2)
-                            Text(channel.name)
-                                .font(.headline)
-                                .lineLimit(2)
-                                .multilineTextAlignment(.center)
-                            Text("Reconnecting…")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        } else if radioService.isBuffering {
-                            ProgressView()
-                                .padding(.bottom, 2)
-                            Text(channel.name)
-                                .font(.headline)
-                                .lineLimit(2)
-                                .multilineTextAlignment(.center)
-                            Text("Tuning Ch. \(channel.number)...")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        } else {
-                            Text(radioService.nowPlayingSong ?? channel.name)
-                                .font(.headline)
-                                .lineLimit(2)
-                                .multilineTextAlignment(.center)
+        TabView(selection: $page) {
+            if watchIsPlaying {
+                NowPlayingView()
+                    .ignoresSafeArea(.container, edges: .bottom)
+                    .accessibilityIdentifier("watch.player.system")
+                    .tag(0)
+            }
+            details.tag(1)
+        }
+        .tabViewStyle(.page(indexDisplayMode: watchIsPlaying && page == 1 ? .automatic : .never))
+        .ignoresSafeArea(.container, edges: .bottom)
+        .navigationTitle(page == 0 ? "" : "Details")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear { page = watchIsPlaying ? 0 : 1 }
+        .onChange(of: watchIsPlaying) { _, playing in page = playing ? 0 : 1 }
+    }
 
-                            Text(radioService.nowPlayingArtist ?? "Ch. \(channel.number)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
+    private var details: some View {
+        ScrollView {
+            VStack(spacing: 12) {
+                Label("Apple Watch", systemImage: "applewatch")
+                    .font(.headline)
+                if let channel = radioService.currentChannel {
+                    VStack(spacing: 4) {
+                        Text(channel.name + " · Ch. " + channel.number)
+                            .font(.caption).foregroundStyle(.secondary)
+                        Text(radioService.nowPlayingSong ?? channel.name)
+                            .font(.headline).multilineTextAlignment(.center).lineLimit(2)
+                        if let artist = radioService.nowPlayingArtist {
+                            Text(artist).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                         }
                     }
-
-                    // Controls
+                    if radioService.isBuffering || radioService.isReconnecting {
+                        ProgressView(radioService.isReconnecting ? "Reconnecting on Watch…" : "Tuning on Watch…")
+                    }
                     HStack(spacing: 20) {
                         Button {
                             Task { await radioService.previousChannel() }
-                        } label: {
-                            Image(systemName: "backward.fill")
-                                .font(.title3)
-                        }
-                        .buttonStyle(.plain)
-
-                        Button {
-                            radioService.togglePlayback()
-                        } label: {
-                            Image(systemName: !radioService.userWantsPlayback ? "play.fill" : "pause.fill")
+                        } label: { Image(systemName: "backward.fill") }
+                        .accessibilityLabel("Previous channel on Watch")
+                        Button { radioService.togglePlayback() } label: {
+                            Image(systemName: radioService.userWantsPlayback ? "pause.fill" : "play.fill")
                                 .font(.title2)
                         }
-                        .buttonStyle(.plain)
-
+                        .accessibilityLabel(radioService.userWantsPlayback ? "Pause Watch" : "Play on Apple Watch")
+                        .accessibilityIdentifier("watch.player.toggle")
                         Button {
                             Task { await radioService.nextChannel() }
-                        } label: {
-                            Image(systemName: "forward.fill")
-                                .font(.title3)
-                        }
-                        .buttonStyle(.plain)
+                        } label: { Image(systemName: "forward.fill") }
+                        .accessibilityLabel("Next channel on Watch")
                     }
-                }
-                .padding()
-            } else {
-                VStack(spacing: 12) {
-                    Image(systemName: "radio")
-                        .font(.largeTitle)
-                        .foregroundStyle(.secondary)
-                    Text("No Channel Selected")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text("Choose a channel from the Channels tab")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                    .buttonStyle(.plain)
+                    .padding(.vertical, 6)
+                } else {
+                    Text("Choose a channel to listen on your Apple Watch.")
+                        .font(.caption).foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
-                .padding()
+                if let error = radioService.errorMessage {
+                    Text(error).font(.caption2).foregroundStyle(.orange)
+                }
+                Button("Choose Channel", systemImage: "radio", action: onChooseChannel)
+                    .accessibilityIdentifier("watch.player.channels")
+                Button("Control iPhone", systemImage: "iphone", action: onControlPhone)
+                    .accessibilityIdentifier("watch.player.phoneControls")
             }
+            .padding(.horizontal, 4)
         }
-        .navigationTitle("Details")
-    }
-
-}
-
-/// Source selection lives on Details, leaving the native player full-screen.
-struct XMPlaybackDevicePicker: View {
-    @AppStorage("xm_playback_device") private var playbackDevice = "watch"
-
-    var body: some View {
-        Picker("Playback device", selection: $playbackDevice) {
-            Label("Apple Watch", systemImage: "applewatch").tag("watch")
-            Label("iPhone", systemImage: "iphone").tag("phone")
-        }
-        .accessibilityIdentifier("watch.playbackDevice")
     }
 }
