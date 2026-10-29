@@ -76,6 +76,7 @@ struct PhonePlayerView: View {
             }
             .padding(.horizontal)
         }
+        .watchPlaybackVolume(.companion)
         .task { connectivity.refresh() }
     }
 }
