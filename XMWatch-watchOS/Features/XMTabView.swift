@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 struct XMTabView: View {
     @Environment(XMRadioService.self) private var radioService
@@ -6,10 +7,14 @@ struct XMTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
+            NowPlayingView()
+                .accessibilityIdentifier("watch.player.system")
+                .tag(0)
+
             NavigationStack {
                 XMPlayerView()
             }
-            .tag(0)
+            .tag(4)
 
             NavigationStack {
                 XMChannelsView(selectedTab: $selectedTab)
@@ -26,6 +31,7 @@ struct XMTabView: View {
             }
             .tag(3)
         }
+        .tabViewStyle(.page(indexDisplayMode: .automatic))
         .task(id: radioService.isConfigured) {
             await radioService.resumeOnceAfterConfiguration()
             if radioService.currentChannel != nil { selectedTab = 0 }

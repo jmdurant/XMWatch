@@ -6,6 +6,7 @@ struct XMPlayerView: View {
 
     var body: some View {
         ScrollView {
+            XMPlaybackDevicePicker()
             if let channel = radioService.currentChannel {
                 VStack(spacing: 10) {
                     // Album art or channel logo
@@ -102,8 +103,7 @@ struct XMPlayerView: View {
                 .padding()
             }
         }
-        .navigationTitle("Now Playing")
-        .watchPlaybackVolume(.local, isReady: !radioService.isBuffering)
+        .navigationTitle("Details")
     }
 
     @ViewBuilder
@@ -126,98 +126,15 @@ struct XMPlayerView: View {
     }
 }
 
-// Keep the system volume control visible and focused while this playback screen is active.
-// WatchKit owns the actual watch/iPhone volume; no per-player gain or custom volume RPC.
-@MainActor
-extension View {
-    func watchPlaybackVolume(_ origin: WKInterfaceVolumeControl.Origin, isReady: Bool = true) -> some View {
-        modifier(WatchPlaybackVolumeModifier(origin: origin, isReady: isReady))
-    }
-}
+/// Source selection lives on Details, leaving the native player full-screen.
+struct XMPlaybackDevicePicker: View {
+    @AppStorage("xm_playback_device") private var playbackDevice = "watch"
 
-@MainActor
-private final class WatchVolumeFocus {
-    weak var control: WKInterfaceVolumeControl?
-    var visible = false
-    var sceneActive = false
-    private var ownsFocus = false
-
-    func refresh() {
-        guard let control else { return }
-        if visible && sceneActive {
-            control.focus()
-            ownsFocus = true
-        } else { release() }
-    }
-
-    private func release() {
-        // Repeated resigns during teardown can clear the next screen's new focus.
-        guard ownsFocus else { return }
-        ownsFocus = false
-        control?.resignFocus()
-    }
-
-    func detach(_ control: WKInterfaceVolumeControl) {
-        guard self.control === control else { return }
-        release()
-        self.control = nil
-    }
-}
-
-@MainActor
-private struct WatchNativeVolumeControl: WKInterfaceObjectRepresentable {
-    let origin: WKInterfaceVolumeControl.Origin
-    let focus: WatchVolumeFocus
-
-    func makeCoordinator() -> WatchVolumeFocus { focus }
-
-    func makeWKInterfaceObject(context: Context) -> WKInterfaceVolumeControl {
-        let control = WKInterfaceVolumeControl(origin: origin)
-        focus.control = control
-        return control
-    }
-
-    func updateWKInterfaceObject(_ control: WKInterfaceVolumeControl, context: Context) {
-        // Wait for the native control to join the interface before requesting Crown input.
-        DispatchQueue.main.async { [weak focus] in focus?.refresh() }
-    }
-
-    static func dismantleWKInterfaceObject(_ control: WKInterfaceVolumeControl, coordinator: WatchVolumeFocus) {
-        coordinator.detach(control)
-    }
-}
-
-@MainActor
-private struct WatchPlaybackVolumeModifier: ViewModifier {
-    let origin: WKInterfaceVolumeControl.Origin
-    let isReady: Bool
-    @Environment(\.scenePhase) private var scenePhase
-    @State private var focus = WatchVolumeFocus()
-
-    func body(content: Content) -> some View {
-        content
-            .focusable(false)
-            .safeAreaInset(edge: .bottom, spacing: 2) {
-                WatchNativeVolumeControl(origin: origin, focus: focus)
-                    .frame(height: 32)
-                    .accessibilityLabel(origin == .local ? "Apple Watch volume" : "iPhone volume")
-                    .accessibilityIdentifier(origin == .local ? "watch.volume.local" : "watch.volume.phone")
-                    .background(.background)
-            }
-            .onAppear {
-                focus.visible = true
-                focus.sceneActive = scenePhase == .active
-                focus.refresh()
-            }
-            .onDisappear { focus.visible = false; focus.refresh() }
-            .onChange(of: isReady) { _, ready in if ready { focus.refresh() } }
-            .onChange(of: scenePhase) { _, phase in
-                focus.sceneActive = phase == .active
-                focus.refresh()
-            }
-            // Restore Crown ownership after a finger scroll finishes without intercepting it.
-            .onScrollPhaseChange { _, phase in
-                if phase == .idle { focus.refresh() }
-            }
+    var body: some View {
+        Picker("Playback device", selection: $playbackDevice) {
+            Label("Apple Watch", systemImage: "applewatch").tag("watch")
+            Label("iPhone", systemImage: "iphone").tag("phone")
+        }
+        .accessibilityIdentifier("watch.playbackDevice")
     }
 }

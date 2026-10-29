@@ -1,11 +1,23 @@
 import SwiftUI
+import WatchKit
 
 struct PhonePlayerView: View {
     @State private var connectivity = PlaybackConnectivity.shared
 
     var body: some View {
+        TabView {
+            NowPlayingView()
+                .accessibilityIdentifier("watch.player.system")
+            NavigationStack { details }
+        }
+        .tabViewStyle(.page(indexDisplayMode: .automatic))
+        .task { connectivity.refresh() }
+    }
+
+    private var details: some View {
         ScrollView {
             VStack(spacing: 8) {
+                XMPlaybackDevicePicker()
                 Label("Playing on iPhone", systemImage: "iphone")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -76,7 +88,6 @@ struct PhonePlayerView: View {
             }
             .padding(.horizontal)
         }
-        .watchPlaybackVolume(.companion)
-        .task { connectivity.refresh() }
+        .navigationTitle("Details")
     }
 }
