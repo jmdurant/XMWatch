@@ -2,15 +2,20 @@ import SwiftUI
 import WatchKit
 
 struct PhonePlayerView: View {
+    @State private var page = 0
     @State private var connectivity = PlaybackConnectivity.shared
 
     var body: some View {
-        TabView {
+        TabView(selection: $page) {
             NowPlayingView()
+                .ignoresSafeArea(.container, edges: .bottom)
                 .accessibilityIdentifier("watch.player.system")
+                .tag(0)
             NavigationStack { details }
+                .tag(1)
         }
-        .tabViewStyle(.page(indexDisplayMode: .automatic))
+        .tabViewStyle(.page(indexDisplayMode: page == 0 ? .never : .automatic))
+        .ignoresSafeArea(.container, edges: .bottom)
         .task { connectivity.refresh() }
     }
 
@@ -22,15 +27,6 @@ struct PhonePlayerView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 if let state = connectivity.phoneState, let channel = state.channelName {
-                    if let artwork = state.artworkURL, let url = URL(string: artwork) {
-                        AsyncImage(url: url) { image in
-                            image.resizable().scaledToFit()
-                        } placeholder: {
-                            Image(systemName: "radio")
-                        }
-                        .frame(width: 64, height: 64)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
                     Text(state.title ?? channel)
                         .font(.headline)
                         .multilineTextAlignment(.center)

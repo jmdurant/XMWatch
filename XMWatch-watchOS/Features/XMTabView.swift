@@ -8,6 +8,7 @@ struct XMTabView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             NowPlayingView()
+                .ignoresSafeArea(.container, edges: .bottom)
                 .accessibilityIdentifier("watch.player.system")
                 .tag(0)
 
@@ -31,7 +32,8 @@ struct XMTabView: View {
             }
             .tag(3)
         }
-        .tabViewStyle(.page(indexDisplayMode: .automatic))
+        .tabViewStyle(.page(indexDisplayMode: selectedTab == 0 ? .never : .automatic))
+        .ignoresSafeArea(.container, edges: .bottom)
         .task(id: radioService.isConfigured) {
             await radioService.resumeOnceAfterConfiguration()
             if radioService.currentChannel != nil { selectedTab = 0 }

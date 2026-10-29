@@ -9,21 +9,6 @@ struct XMPlayerView: View {
             XMPlaybackDevicePicker()
             if let channel = radioService.currentChannel {
                 VStack(spacing: 10) {
-                    // Album art or channel logo
-                    if let artURL = radioService.nowPlayingArtURL, let url = URL(string: artURL) {
-                        AsyncImage(url: url) { image in
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                        } placeholder: {
-                            channelImage(channel)
-                        }
-                        .frame(width: 80, height: 80)
-                        .cornerRadius(8)
-                    } else {
-                        channelImage(channel)
-                    }
-
                     // Song title + Artist
                     VStack(spacing: 2) {
                         if radioService.isReconnecting {
@@ -106,24 +91,6 @@ struct XMPlayerView: View {
         .navigationTitle("Details")
     }
 
-    @ViewBuilder
-    private func channelImage(_ channel: XMChannel) -> some View {
-        AsyncImage(url: URL(string: channel.mediumImageURL)) { image in
-            image
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-        } placeholder: {
-            Rectangle()
-                .fill(.quaternary)
-                .overlay {
-                    Image(systemName: "radio")
-                        .font(.title2)
-                        .foregroundStyle(.secondary)
-                }
-        }
-        .frame(width: 80, height: 80)
-        .cornerRadius(8)
-    }
 }
 
 /// Source selection lives on Details, leaving the native player full-screen.
